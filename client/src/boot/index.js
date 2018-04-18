@@ -1,4 +1,4 @@
 /* global document */
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOMContentLoaded: Algolia-Search')
+  console.log('DOMContentLoaded: Elastic-Search')
 });

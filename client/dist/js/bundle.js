@@ -1,1 +1,1 @@
-console.log('algolia-search');
+console.log('elastic-search');

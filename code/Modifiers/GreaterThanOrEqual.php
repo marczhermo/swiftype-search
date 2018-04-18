@@ -1,6 +1,6 @@
 <?php
 
-namespace Marcz\Algolia\Modifiers;
+namespace Marcz\Elastic\Modifiers;
 
 use SilverStripe\Core\Injector\Injectable;
 

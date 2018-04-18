@@ -1,10 +1,10 @@
 {
-    "name": "marczhermo/algolia-search",
-    "description": "Algolis SilverStripe Module For Search",
+    "name": "marczhermo/elastic-search",
+    "description": "Elastic SilverStripe Module For Search",
     "type": "silverstripe-vendormodule",
     "license": "BSD-3-Clause",
     "keywords": [
-        "algolia",
+        "elastic",
         "silverstripe",
         "search",
         "admin"
@@ -15,7 +15,7 @@
         "silverstripe/versioned": "^1@dev",
         "silverstripe/vendor-plugin": "^1.0",
         "marczhermo/search-list": "dev-master",
-        "algolia/algoliasearch-client-php": "^1.25"
+        "elasticsearch/elasticsearch": "~6.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^5.7",
@@ -29,8 +29,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Marcz\\Algolia\\": "code/",
-            "Marcz\\Algolia\\Tests\\": "tests/php/"
+            "Marcz\\Elastic\\": "code/",
+            "Marcz\\Elastic\\Tests\\": "tests/php/"
         }
     },
     "scripts": {

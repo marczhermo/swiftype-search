@@ -1,22 +1,22 @@
 <?php
 
-namespace Marcz\Algolia;
+namespace Marcz\Elastic;
 
 use SilverStripe\Core\Injector\Injectable;
-use AlgoliaSearch\Client;
+use ElasticSearch\Client;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Config\Configurable;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
-use Marcz\Algolia\Jobs\JsonBulkExport;
-use Marcz\Algolia\Jobs\JsonExport;
+use Marcz\Elastic\Jobs\JsonBulkExport;
+use Marcz\Elastic\Jobs\JsonExport;
 use SilverStripe\ORM\DataList;
 use SilverStripe\ORM\ArrayList;
 use Marcz\Search\Config;
 use Marcz\Search\Client\SearchClientAdaptor;
-use Marcz\Algolia\Jobs\DeleteRecord;
+use Marcz\Elastic\Jobs\DeleteRecord;
 
-class AlgoliaClient implements SearchClientAdaptor
+class ElasticClient implements SearchClientAdaptor
 {
     use Injectable, Configurable;
 
@@ -229,7 +229,7 @@ class AlgoliaClient implements SearchClientAdaptor
 
     public function modifyFilter($modifier, $key, $value)
     {
-        return Injector::inst()->create('Marcz\\Algolia\\Modifiers\\' . $modifier)->apply($key, $value);
+        return Injector::inst()->create('Marcz\\Elastic\\Modifiers\\' . $modifier)->apply($key, $value);
     }
 
     public function modifyOrFilter($modifier, $key, $values)

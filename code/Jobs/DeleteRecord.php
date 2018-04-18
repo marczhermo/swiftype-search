@@ -1,10 +1,10 @@
 <?php
 
-namespace Marcz\Algolia\Jobs;
+namespace Marcz\Elastic\Jobs;
 
 use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJob;
-use Marcz\Algolia\AlgoliaClient;
+use Marcz\Elastic\ElasticClient;
 use Exception;
 use SilverStripe\ORM\DataList;
 
@@ -80,7 +80,7 @@ class DeleteRecord extends AbstractQueuedJob implements QueuedJob
     public function createClient($client = null)
     {
         if (!$client) {
-            $this->client = AlgoliaClient::create();
+            $this->client = ElasticClient::create();
         }
 
         $this->client->initIndex($this->indexName);

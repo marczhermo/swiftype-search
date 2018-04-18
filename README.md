@@ -1,4 +1,4 @@
-# Algolia Search
+# Elastic Search
 
 ## Overview
 

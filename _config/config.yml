@@ -1,10 +1,10 @@
 ---
-Name: algoliasearch
+Name: elasticsearch
 ---
 SilverStripe\Admin\LeftAndMain:
   extensions:
-    - Marcz\Algolia\AlgoliaAdminExtension
+    - Marcz\Elastic\ElasticAdminExtension
 
 Marcz\Search\Processor\Exporter:
   extensions:
-    - Marcz\Algolia\Extensions\Exporter
+    - Marcz\Elastic\Extensions\Exporter

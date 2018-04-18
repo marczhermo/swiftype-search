@@ -1,6 +1,6 @@
 <?php
 
-namespace Marcz\Algolia\Jobs;
+namespace Marcz\Elastic\Jobs;
 
 use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJob;
@@ -8,7 +8,7 @@ use SilverStripe\Assets\File;
 use SilverStripe\ORM\FieldType\DBDatetime;
 use SilverStripe\Core\Config\Config as FileConfig;
 use Marcz\Search\Processor\Exporter;
-use Marcz\Algolia\AlgoliaClient;
+use Marcz\Elastic\ElasticClient;
 use Exception;
 use Marcz\Search\Config;
 
@@ -94,7 +94,7 @@ class JsonBulkExport extends AbstractQueuedJob implements QueuedJob
             $dateTime->URLDatetime(),
             $this->offset
         );
-        $batchLength = AlgoliaClient::config()->get('batch_length') ?: Config::config()->get('batch_length');
+        $batchLength = ElasticClient::config()->get('batch_length') ?: Config::config()->get('batch_length');
 
         $this->bulkArray = $exporter->bulkExport($this->className, $this->offset, $batchLength);
 
@@ -138,7 +138,7 @@ class JsonBulkExport extends AbstractQueuedJob implements QueuedJob
     public function createClient($client = null)
     {
         if (!$client) {
-            $this->client = AlgoliaClient::create();
+            $this->client = ElasticClient::create();
         }
 
         $this->client->initIndex($this->indexName);
