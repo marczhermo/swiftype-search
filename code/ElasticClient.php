@@ -3,7 +3,6 @@
 namespace Marcz\Elastic;
 
 use SilverStripe\Core\Injector\Injectable;
-use ElasticSearch\Client;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Config\Configurable;
@@ -11,28 +10,58 @@ use Symbiote\QueuedJobs\Services\QueuedJobService;
 use Marcz\Elastic\Jobs\JsonBulkExport;
 use Marcz\Elastic\Jobs\JsonExport;
 use SilverStripe\ORM\DataList;
-use SilverStripe\ORM\ArrayList;
 use Marcz\Search\Config;
 use Marcz\Search\Client\SearchClientAdaptor;
 use Marcz\Elastic\Jobs\DeleteRecord;
+use Elasticsearch\ClientBuilder;
 
 class ElasticClient implements SearchClientAdaptor
 {
     use Injectable, Configurable;
 
     protected $clientIndex;
+    protected $clientIndexName;
     protected $clientAPI;
 
     private static $batch_length = 100;
 
     public function createClient()
     {
-        if (!$this->clientAPI) {
-            $this->clientAPI = new Client(
-                Environment::getEnv('SS_ALGOLIA_APP_NAME'),
-                Environment::getEnv('SS_ALGOLIA_SEARCH_KEY')
-            );
+        if ($this->clientAPI) {
+            return $this->clientAPI;
         }
+
+        $host = Environment::getEnv('SS_ELASTIC_HOST');
+        $port = Environment::getEnv('SS_ELASTIC_PORT');
+        $http = Environment::getEnv('SS_ELASTIC_HTTP');
+        $user = Environment::getEnv('SS_ELASTIC_USER');
+        $pass = Environment::getEnv('SS_ELASTIC_PASS');
+        $cert = Environment::getEnv('SS_ELASTIC_CERT');
+
+        $conf = [];
+        if ($host) {
+            $conf['host'] = $host;
+        }
+        if ($port) {
+            $conf['port'] = $port;
+        }
+        if ($http) {
+            $conf['scheme'] = $http;
+        }
+        if ($user) {
+            $conf['user'] = $user;
+        }
+        if ($pass) {
+            $conf['pass'] = $pass;
+        }
+
+        $builder = ClientBuilder::create()->setHosts([$conf]);
+
+        if ($cert) {
+            $builder = $builder->setSSLVerification($cert);
+        }
+
+        $this->clientAPI = $builder->build();
 
         return $this->clientAPI;
     }
@@ -41,7 +70,8 @@ class ElasticClient implements SearchClientAdaptor
     {
         $client = $this->createClient();
 
-        $this->clientIndex = $client->initIndex($indexName);
+        $this->clientIndex     = $client->indices();
+        $this->clientIndexName = strtolower($indexName);
 
         return $this->clientIndex;
     }
@@ -49,54 +79,52 @@ class ElasticClient implements SearchClientAdaptor
     public function createIndex($indexName)
     {
         $index    = $this->initIndex($indexName);
-        $settings = [
-            //Phrase query, surrounded by quotes eg. "search engine"
-            'advancedSyntax' => true,
-            'ranking'        => [
-                'typo',
-                'geo',
-                'words',
-                'filters',
-                'proximity',
-                'attribute',
-                'exact',
-                'custom'
-            ]
-        ];
+        $settings = ['index' => $this->clientIndexName];
 
-        $indexConfig = ArrayList::create(Config::config()->get('indices'))
-                            ->filter(['name' => $indexName])->first();
+        try {
+            $index->create($settings);
+        } catch (\Exception $exception) {
+            $json = json_decode($exception->getMessage(), true);
+            if (!$json['status'] === 400) {
+                throw $exception;
+            }
 
-        if (!empty($indexConfig['ranking'])) {
-            $settings['ranking'] = $indexConfig['ranking'];
+            $error = $json['error'];
+
+            if ($error['type'] !== 'resource_already_exists_exception') {
+                throw $exception;
+            }
         }
-
-        if (!empty($indexConfig['searchableAttributes'])) {
-            $settings['searchableAttributes'] = $indexConfig['searchableAttributes'];
-        }
-
-        if (!empty($indexConfig['attributesForFaceting'])) {
-            $settings['attributesForFaceting'] = $indexConfig['attributesForFaceting'];
-        }
-
-        if (!empty($indexConfig['customRanking'])) {
-            $settings['customRanking'] = $indexConfig['customRanking'];
-        }
-
-        // Set the default ranking
-        $index->setSettings($settings);
-
-        return $index;
     }
 
     public function update($data)
     {
-        $this->clientIndex->saveObject($data, 'ID');
+        $params = [
+            'index' => $this->clientIndexName,
+            'type'  => $this->clientIndexName,
+            'id'    => $data['ID'],
+            'body'  => ['upsert' => $data, 'doc' => $data]
+        ];
+
+        $this->callClientMethod('update', [$params]);
     }
 
     public function bulkUpdate($list)
     {
-        $this->clientIndex->saveObjects($list, 'ID');
+        $params = [];
+        for ($i = 0; $i < count($list); $i++) {
+            $params['body'][] = [
+                'index' => [
+                    '_index' => $this->clientIndexName,
+                    '_type'  => $this->clientIndexName,
+                    '_id'    => $list[$i]['ID']
+                ]
+            ];
+
+            $params['body'][] = $list[$i];
+        }
+
+        $this->callClientMethod('bulk', [$params]);
     }
 
     public function deleteRecord($recordID)
@@ -225,6 +253,11 @@ class ElasticClient implements SearchClientAdaptor
     public function callIndexMethod($methodName, $parameters = [])
     {
         return call_user_func_array([$this->clientIndex, $methodName], $parameters);
+    }
+
+    public function callClientMethod($methodName, $parameters = [])
+    {
+        return call_user_func_array([$this->clientAPI, $methodName], $parameters);
     }
 
     public function modifyFilter($modifier, $key, $value)
