@@ -14,8 +14,10 @@ use Marcz\Search\Config;
 use Marcz\Search\Client\SearchClientAdaptor;
 use Marcz\Elastic\Jobs\DeleteRecord;
 use Elasticsearch\ClientBuilder;
+use Marcz\Search\Client\DataWriter;
+use Marcz\Search\Client\DataSearcher;
 
-class ElasticClient implements SearchClientAdaptor
+class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
 {
     use Injectable, Configurable;
 
