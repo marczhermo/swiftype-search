@@ -129,7 +129,13 @@ class ElasticClient implements SearchClientAdaptor
 
     public function deleteRecord($recordID)
     {
-        $this->clientIndex->deleteObject($recordID);
+        $params = [
+            'index' => $this->clientIndexName,
+            'type'  => $this->clientIndexName,
+            'id'    => $recordID,
+        ];
+
+        $this->callClientMethod('delete', [$params]);
     }
 
     public function createBulkExportJob($indexName, $className)

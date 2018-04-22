@@ -6,7 +6,6 @@ use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJob;
 use Marcz\Elastic\ElasticClient;
 use Exception;
-use SilverStripe\ORM\DataList;
 
 class DeleteRecord extends AbstractQueuedJob implements QueuedJob
 {
@@ -51,13 +50,6 @@ class DeleteRecord extends AbstractQueuedJob implements QueuedJob
 
         if (!$this->recordID) {
             throw new Exception('Missing recordID defined on the constructor');
-        }
-
-        $list   = new DataList($this->className);
-        $record = $list->byID($this->recordID);
-
-        if (!$record) {
-            throw new Exception('Record not found.');
         }
 
         $client = $this->createClient();
