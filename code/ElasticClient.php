@@ -25,6 +25,7 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
     protected $clientIndex;
     protected $clientIndexName;
     protected $clientAPI;
+    protected $response;
 
     private static $batch_length = 100;
 
@@ -223,8 +224,15 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
         if (isset($modifiers['filters'])) {
             $query['body']['query']['bool']['filter'] = $modifiers['filters'];
         }
-        
-        return $this->callClientMethod('search', [$query]);
+
+        $this->response = $this->callClientMethod('search', [$query]);
+
+        return new ArrayList($this->response['hits']['hits']);
+    }
+
+    public function getResponse()
+    {
+        return $this->response;
     }
 
     /**
