@@ -10,6 +10,7 @@ use Symbiote\QueuedJobs\Services\QueuedJobService;
 use Marcz\Elastic\Jobs\JsonBulkExport;
 use Marcz\Elastic\Jobs\JsonExport;
 use SilverStripe\ORM\DataList;
+use SilverStripe\ORM\ArrayList;
 use Marcz\Search\Config;
 use Marcz\Search\Client\SearchClientAdaptor;
 use Marcz\Elastic\Jobs\DeleteRecord;
@@ -73,7 +74,7 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
         $client = $this->createClient();
 
         $this->clientIndex     = $client->indices();
-        $this->clientIndexName = strtolower($indexName);
+        $this->clientIndexName = $indexName;
 
         return $this->clientIndex;
     }
@@ -81,7 +82,7 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
     public function createIndex($indexName)
     {
         $index    = $this->initIndex($indexName);
-        $settings = ['index' => $this->clientIndexName];
+        $settings = ['index' => strtolower($this->clientIndexName)];
 
         try {
             $index->create($settings);
@@ -101,9 +102,10 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
 
     public function update($data)
     {
-        $params = [
-            'index' => $this->clientIndexName,
-            'type'  => $this->clientIndexName,
+        $indexName = strtolower($this->clientIndexName);
+        $params    = [
+            'index' => $indexName,
+            'type'  => $indexName,
             'id'    => $data['ID'],
             'body'  => ['upsert' => $data, 'doc' => $data]
         ];
@@ -113,12 +115,13 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
 
     public function bulkUpdate($list)
     {
-        $params = [];
+        $indexName = strtolower($this->clientIndexName);
+        $params    = [];
         for ($i = 0; $i < count($list); $i++) {
             $params['body'][] = [
                 'index' => [
-                    '_index' => $this->clientIndexName,
-                    '_type'  => $this->clientIndexName,
+                    '_index' => $indexName,
+                    '_type'  => $indexName,
                     '_id'    => $list[$i]['ID']
                 ]
             ];
@@ -131,9 +134,10 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
 
     public function deleteRecord($recordID)
     {
-        $params = [
-            'index' => $this->clientIndexName,
-            'type'  => $this->clientIndexName,
+        $indexName = strtolower($this->clientIndexName);
+        $params    = [
+            'index' => $indexName,
+            'type'  => $indexName,
             'id'    => $recordID,
         ];
 
@@ -179,18 +183,48 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
         singleton(QueuedJobService::class)->queueJob($job);
     }
 
-    public function search($term = '', $filters = [], $pageNumber = 0, $pageLength = 20)
+    public function search($term = '*', $filters = [], $pageNumber = 0, $pageLength = 20)
     {
-        $query = [
-            'page'       => $pageNumber,
-            'hitsPerPage'=> $pageLength,
-            // In order to retrieve facets and their respective counts as part of the JSON response
-            'facets'     => ['*'],
+        $indexName = strtolower($this->clientIndexName);
+        $query     = [
+            'index' => $indexName,
+            'type'  => $indexName,
+            'from'  => $pageNumber,
+            'size'  => $pageLength,
+            'body'  => [
+                'query' => [
+                    'bool' => [
+                        'must' => [
+                            [
+                                'query_string' => [
+                                    'query'            => empty($term) ? '*' : $term,
+                                    'analyze_wildcard' => true,
+                                    'default_field'    => '*'
+                                ]
+                            ],
+                        ],
+                        'filter'   => [],
+                        'should'   => [],
+                        'must_not' => [],
+                    ],
+                ],
+            ],
         ];
 
-        $query = array_merge($query, $this->translateFilterModifiers($filters));
+        $facets = $query['body']['query']['bool']['must'];
+        $modifiers = $this->translateFilterModifiers($filters);
 
-        return $this->callIndexMethod('search', [$term, $query]);
+        if (isset($modifiers['facetFilters'])) {
+            $facets = array_merge($facets, $modifiers['facetFilters']);
+
+            $query['body']['query']['bool']['must'] = $facets;
+        }
+        
+        if (isset($modifiers['filters'])) {
+            $query['body']['query']['bool']['filter'] = $modifiers['filters'];
+        }
+        
+        return $this->callClientMethod('search', [$query]);
     }
 
     /**
@@ -226,14 +260,19 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
                     $fieldName = array_shift($fieldArgs);
                     $modifier  = array_shift($fieldArgs);
                     if (is_array($value)) {
-                        $modifiedFilter[] = $this->modifyOrFilter($modifier, $fieldName, $value);
+                        $modifiedFilter = array_merge(
+                            $modifiedFilter,
+                            $this->modifyFilters($modifier, $fieldName, $value)
+                        );
                     } else {
                         $modifiedFilter[] = $this->modifyFilter($modifier, $fieldName, $value);
                     }
                 }
             }
 
-            $query['filters'] = implode(' AND ', $modifiedFilter);
+            $query['filters'] = [
+                'bool' => ['must' => $modifiedFilter]
+            ];
         }
 
         if ($forFacets) {
@@ -242,14 +281,29 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
             foreach ($forFacets as $filterArray) {
                 foreach ($filterArray as $key => $value) {
                     if (is_array($value)) {
-                        $query['facetFilters'][] = array_map(
+                        $phrases = array_map(
                             function ($item) use ($key) {
-                                return "{$key}:{$item}";
+                                return [
+                                    'match_phrase' => [
+                                        $key => ['query' => $item]
+                                        ]
+                                    ];
                             },
                             $value
                         );
+
+                        $query['facetFilters'][] = [
+                                'bool' => [
+                                    'should'               => $phrases,
+                                    'minimum_should_match' => 1
+                                ]
+                            ];
                     } else {
-                        $query['facetFilters'][] = ["{$key}:{$value}"];
+                        $query['facetFilters'][] = [
+                            'match_phrase' => [
+                                $key => ['query' => $value]
+                            ]
+                        ];
                     }
                 }
             }
@@ -273,7 +327,7 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
         return Injector::inst()->create('Marcz\\Elastic\\Modifiers\\' . $modifier)->apply($key, $value);
     }
 
-    public function modifyOrFilter($modifier, $key, $values)
+    public function modifyFilters($modifier, $key, $values)
     {
         $modifiedFilter = [];
 
@@ -281,6 +335,6 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
             $modifiedFilter[] = $this->modifyFilter($modifier, $key, $value);
         }
 
-        return '(' . implode(' OR ', $modifiedFilter) . ')';
+        return $modifiedFilter;
     }
 }
