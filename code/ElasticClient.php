@@ -99,6 +99,8 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
                 throw $exception;
             }
         }
+
+        return $index;
     }
 
     public function update($data)
@@ -187,6 +189,15 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
     public function search($term = '*', $filters = [], $pageNumber = 0, $pageLength = 20)
     {
         $indexName = strtolower($this->clientIndexName);
+        $term      = trim($term);
+        $term      = empty($term) ? '*' : $term;
+        $terms     = explode(' ', $term);
+
+        // Add tilde for fuzziness on first word used for autocomplete
+        if ($term !== '*' && count($terms) === 1) {
+            $term = $term . '~';
+        }
+
         $query     = [
             'index' => $indexName,
             'type'  => $indexName,
@@ -198,9 +209,10 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
                         'must' => [
                             [
                                 'query_string' => [
-                                    'query'            => empty($term) ? '*' : $term,
+                                    'query'            => $term,
                                     'analyze_wildcard' => true,
-                                    'default_field'    => '*'
+                                    'default_field'    => '*',
+                                    'fuzziness'        => 2,
                                 ]
                             ],
                         ],
@@ -212,7 +224,7 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
             ],
         ];
 
-        $facets = $query['body']['query']['bool']['must'];
+        $facets    = $query['body']['query']['bool']['must'];
         $modifiers = $this->translateFilterModifiers($filters);
 
         if (isset($modifiers['facetFilters'])) {
@@ -220,7 +232,7 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
 
             $query['body']['query']['bool']['must'] = $facets;
         }
-        
+
         if (isset($modifiers['filters'])) {
             $query['body']['query']['bool']['filter'] = $modifiers['filters'];
         }
