@@ -237,9 +237,16 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
             $query['body']['query']['bool']['filter'] = $modifiers['filters'];
         }
 
-        $this->response = $this->callClientMethod('search', [$query]);
+        $response = $this->callClientMethod('search', [$query]);
+        $total = (int) $response['hits']['total'];
+        $this->response = ['_total' => $total] + $response;
 
-        return new ArrayList($this->response['hits']['hits']);
+        $hits = new ArrayList($this->response['hits']['hits']);
+        if ($total) {
+            $hits = new ArrayList($hits->column('_source'));
+        }
+
+        return $hits;
     }
 
     public function getResponse()
