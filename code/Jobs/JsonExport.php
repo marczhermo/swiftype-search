@@ -63,8 +63,9 @@ class JsonExport extends AbstractQueuedJob implements QueuedJob
 
         $exporter = Exporter::create();
         $client   = $this->createClient();
+        $clientClassName = ElasticClient::class;
         $client->update(
-            $exporter->export($record)
+            $exporter->export($record, $clientClassName)
         );
 
         $this->isComplete = true;

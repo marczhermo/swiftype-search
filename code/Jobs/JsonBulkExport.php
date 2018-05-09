@@ -96,7 +96,7 @@ class JsonBulkExport extends AbstractQueuedJob implements QueuedJob
         );
         $batchLength = ElasticClient::config()->get('batch_length') ?: Config::config()->get('batch_length');
 
-        $this->bulkArray = $exporter->bulkExport($this->className, $this->offset, $batchLength);
+        $this->bulkArray = $exporter->bulkExport($this->className, $this->offset, $batchLength, ElasticClient::class);
 
         FileConfig::modify()->set(File::class, 'allowed_extensions', ['json']);
         $file->setFromString(json_encode($this->bulkArray), $fileName);
