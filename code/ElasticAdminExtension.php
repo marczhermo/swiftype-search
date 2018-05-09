@@ -1,15 +1,15 @@
 <?php
 
-namespace Marcz\Elastic;
+namespace Marcz\Swiftype;
 
 use SilverStripe\Core\Extension;
 use SilverStripe\View\Requirements;
 
-class ElasticAdminExtension extends Extension
+class SwiftypeAdminExtension extends Extension
 {
     public function init()
     {
-        Requirements::javascript('marczhermo/elastic-search: client/dist/js/bundle.js');
-        Requirements::css('marczhermo/elastic-search: client/dist/styles/bundle.css');
+        Requirements::javascript('marczhermo/swiftype-search: client/dist/js/bundle.js');
+        Requirements::css('marczhermo/swiftype-search: client/dist/styles/bundle.css');
     }
 }

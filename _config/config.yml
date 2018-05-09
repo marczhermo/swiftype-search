@@ -1,10 +1,10 @@
 ---
-Name: elasticsearch
+Name: swiftypesearch
 ---
 SilverStripe\Admin\LeftAndMain:
   extensions:
-    - Marcz\Elastic\ElasticAdminExtension
+    - Marcz\Swiftype\SwiftypeAdminExtension
 
 Marcz\Search\Processor\Exporter:
   extensions:
-    - Marcz\Elastic\Extensions\Exporter
+    - Marcz\Swiftype\Extensions\Exporter

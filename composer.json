@@ -1,10 +1,10 @@
 {
-    "name": "marczhermo/elastic-search",
-    "description": "Elastic SilverStripe Module For Search",
+    "name": "marczhermo/swiftype-search",
+    "description": "Swiftype SilverStripe Module For Search",
     "type": "silverstripe-vendormodule",
     "license": "BSD-3-Clause",
     "keywords": [
-        "elastic",
+        "swiftype",
         "silverstripe",
         "search",
         "admin"
@@ -14,8 +14,7 @@
         "silverstripe/framework": "^4@dev",
         "silverstripe/versioned": "^1@dev",
         "silverstripe/vendor-plugin": "^1.0",
-        "marczhermo/search-list": "dev-master",
-        "elasticsearch/elasticsearch": "~6.0"
+        "marczhermo/search-list": "dev-master"
     },
     "require-dev": {
         "phpunit/phpunit": "^5.7",
@@ -29,8 +28,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Marcz\\Elastic\\": "code/",
-            "Marcz\\Elastic\\Tests\\": "tests/php/"
+            "Marcz\\Swiftype\\": "code/",
+            "Marcz\\Swiftype\\Tests\\": "tests/php/"
         }
     },
     "scripts": {

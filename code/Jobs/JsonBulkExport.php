@@ -1,6 +1,6 @@
 <?php
 
-namespace Marcz\Elastic\Jobs;
+namespace Marcz\Swiftype\Jobs;
 
 use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJob;
@@ -8,7 +8,7 @@ use SilverStripe\Assets\File;
 use SilverStripe\ORM\FieldType\DBDatetime;
 use SilverStripe\Core\Config\Config as FileConfig;
 use Marcz\Search\Processor\Exporter;
-use Marcz\Elastic\ElasticClient;
+use Marcz\Swiftype\SwiftypeClient;
 use Exception;
 use Marcz\Search\Config;
 
@@ -94,9 +94,9 @@ class JsonBulkExport extends AbstractQueuedJob implements QueuedJob
             $dateTime->URLDatetime(),
             $this->offset
         );
-        $batchLength = ElasticClient::config()->get('batch_length') ?: Config::config()->get('batch_length');
+        $batchLength = SwiftypeClient::config()->get('batch_length') ?: Config::config()->get('batch_length');
 
-        $this->bulkArray = $exporter->bulkExport($this->className, $this->offset, $batchLength, ElasticClient::class);
+        $this->bulkArray = $exporter->bulkExport($this->className, $this->offset, $batchLength, SwiftypeClient::class);
 
         FileConfig::modify()->set(File::class, 'allowed_extensions', ['json']);
         $file->setFromString(json_encode($this->bulkArray), $fileName);
@@ -138,7 +138,7 @@ class JsonBulkExport extends AbstractQueuedJob implements QueuedJob
     public function createClient($client = null)
     {
         if (!$client) {
-            $this->client = ElasticClient::create();
+            $this->client = SwiftypeClient::create();
         }
 
         $this->client->initIndex($this->indexName);

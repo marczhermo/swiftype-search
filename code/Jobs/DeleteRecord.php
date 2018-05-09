@@ -1,10 +1,10 @@
 <?php
 
-namespace Marcz\Elastic\Jobs;
+namespace Marcz\Swiftype\Jobs;
 
 use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJob;
-use Marcz\Elastic\ElasticClient;
+use Marcz\Swiftype\SwiftypeClient;
 use Exception;
 
 class DeleteRecord extends AbstractQueuedJob implements QueuedJob
@@ -72,7 +72,7 @@ class DeleteRecord extends AbstractQueuedJob implements QueuedJob
     public function createClient($client = null)
     {
         if (!$client) {
-            $this->client = ElasticClient::create();
+            $this->client = SwiftypeClient::create();
         }
 
         $this->client->initIndex($this->indexName);

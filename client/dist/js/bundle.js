@@ -1,1 +1,1 @@
-console.log('elastic-search');
+console.log('swiftype-search');

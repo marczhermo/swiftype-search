@@ -1,24 +1,24 @@
 <?php
 
-namespace Marcz\Elastic;
+namespace Marcz\Swiftype;
 
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Config\Configurable;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
-use Marcz\Elastic\Jobs\JsonBulkExport;
-use Marcz\Elastic\Jobs\JsonExport;
+use Marcz\Swiftype\Jobs\JsonBulkExport;
+use Marcz\Swiftype\Jobs\JsonExport;
 use SilverStripe\ORM\DataList;
 use SilverStripe\ORM\ArrayList;
 use Marcz\Search\Config;
 use Marcz\Search\Client\SearchClientAdaptor;
-use Marcz\Elastic\Jobs\DeleteRecord;
-use Elasticsearch\ClientBuilder;
+use Marcz\Swiftype\Jobs\DeleteRecord;
+use Swiftypesearch\ClientBuilder;
 use Marcz\Search\Client\DataWriter;
 use Marcz\Search\Client\DataSearcher;
 
-class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
+class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
 {
     use Injectable, Configurable;
 
@@ -351,7 +351,7 @@ class ElasticClient implements SearchClientAdaptor, DataWriter, DataSearcher
 
     public function modifyFilter($modifier, $key, $value)
     {
-        return Injector::inst()->create('Marcz\\Elastic\\Modifiers\\' . $modifier)->apply($key, $value);
+        return Injector::inst()->create('Marcz\\Swiftype\\Modifiers\\' . $modifier)->apply($key, $value);
     }
 
     public function modifyFilters($modifier, $key, $values)

@@ -1,4 +1,4 @@
-# Elastic Search
+# Swiftype Search
 
 ## Overview
 

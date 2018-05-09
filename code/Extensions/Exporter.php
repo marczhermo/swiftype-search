@@ -1,15 +1,15 @@
 <?php
 
-namespace Marcz\Elastic\Extensions;
+namespace Marcz\Swiftype\Extensions;
 
 use SilverStripe\Core\Extension;
-use Marcz\Elastic\ElasticClient;
+use Marcz\Swiftype\SwiftypeClient;
 
 class Exporter extends Extension
 {
     public function updateExport(&$data, &$clientClassName)
     {
-        if ($clientClassName === ElasticClient::class) {
+        if ($clientClassName === SwiftypeClient::class) {
             // TODO:
         }
     }

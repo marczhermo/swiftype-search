@@ -1,4 +1,4 @@
 /* global document */
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOMContentLoaded: Elastic-Search')
+  console.log('DOMContentLoaded: Swiftype-Search')
 });

@@ -1,11 +1,11 @@
 <?php
 
-namespace Marcz\Elastic\Jobs;
+namespace Marcz\Swiftype\Jobs;
 
 use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJob;
 use Marcz\Search\Processor\Exporter;
-use Marcz\Elastic\ElasticClient;
+use Marcz\Swiftype\SwiftypeClient;
 use Exception;
 use SilverStripe\ORM\DataList;
 
@@ -63,7 +63,7 @@ class JsonExport extends AbstractQueuedJob implements QueuedJob
 
         $exporter = Exporter::create();
         $client   = $this->createClient();
-        $clientClassName = ElasticClient::class;
+        $clientClassName = SwiftypeClient::class;
         $client->update(
             $exporter->export($record, $clientClassName)
         );
@@ -85,7 +85,7 @@ class JsonExport extends AbstractQueuedJob implements QueuedJob
     public function createClient($client = null)
     {
         if (!$client) {
-            $this->client = ElasticClient::create();
+            $this->client = SwiftypeClient::create();
         }
 
         $this->client->initIndex($this->indexName);
