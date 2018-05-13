@@ -3,3 +3,8 @@
 /node_modules/
 /**/*.js.map
 /**/*.css.map
+.env
+/code/Page.php
+/code/PageController.php
+/resources
+/assets

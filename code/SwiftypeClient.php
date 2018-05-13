@@ -14,18 +14,21 @@ use SilverStripe\ORM\ArrayList;
 use Marcz\Search\Config;
 use Marcz\Search\Client\SearchClientAdaptor;
 use Marcz\Swiftype\Jobs\DeleteRecord;
-use Swiftypesearch\ClientBuilder;
+use GuzzleHttp\Ring\Client\CurlHandler;
+use GuzzleHttp\Stream\Stream;
 use Marcz\Search\Client\DataWriter;
 use Marcz\Search\Client\DataSearcher;
+use Exception;
 
 class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
 {
     use Injectable, Configurable;
 
-    protected $clientIndex;
+    protected $authToken;
     protected $clientIndexName;
     protected $clientAPI;
     protected $response;
+    protected $rawQuery;
 
     private static $batch_length = 100;
 
@@ -35,72 +38,158 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
             return $this->clientAPI;
         }
 
-        $host = Environment::getEnv('SS_ELASTIC_HOST');
-        $port = Environment::getEnv('SS_ELASTIC_PORT');
-        $http = Environment::getEnv('SS_ELASTIC_HTTP');
-        $user = Environment::getEnv('SS_ELASTIC_USER');
-        $pass = Environment::getEnv('SS_ELASTIC_PASS');
-        $cert = Environment::getEnv('SS_ELASTIC_CERT');
+        return $this->setClientAPI(new CurlHandler());
+    }
 
-        $conf = [];
-        if ($host) {
-            $conf['host'] = $host;
-        }
-        if ($port) {
-            $conf['port'] = $port;
-        }
-        if ($http) {
-            $conf['scheme'] = $http;
-        }
-        if ($user) {
-            $conf['user'] = $user;
-        }
-        if ($pass) {
-            $conf['pass'] = $pass;
-        }
-
-        $builder = ClientBuilder::create()->setHosts([$conf]);
-
-        if ($cert) {
-            $builder = $builder->setSSLVerification($cert);
-        }
-
-        $this->clientAPI = $builder->build();
+    public function setClientAPI($handler)
+    {
+        $this->clientAPI = $handler;
 
         return $this->clientAPI;
     }
 
     public function initIndex($indexName)
     {
-        $client = $this->createClient();
+        $this->createClient();
 
-        $this->clientIndex     = $client->indices();
         $this->clientIndexName = $indexName;
 
-        return $this->clientIndex;
+        $endPoint = Environment::getEnv('SS_SWIFTYPE_END_POINT');
+        $this->rawQuery = [
+            'http_method'   => 'GET',
+            'uri'           => parse_url($endPoint, PHP_URL_PATH),
+            //'query_string' => ($query) ? $query . '&' . $token : $token,
+            'headers'       => [
+                'host'  => [parse_url($endPoint, PHP_URL_HOST)],
+                'Content-Type' => ['application/json'],
+            ],
+            'client'      => [
+                'curl' => [
+                    CURLOPT_SSL_VERIFYHOST => 0,
+                    CURLOPT_SSL_VERIFYPEER => false
+                ]
+            ]
+            // 'body' => $data
+        ];
+
+        return $this->sql();
     }
 
     public function createIndex($indexName)
     {
-        $index    = $this->initIndex($indexName);
-        $settings = ['index' => strtolower($this->clientIndexName)];
+        if (!$this->hasEngine($indexName)) {
+            $this->createEngine($indexName);
+        }
 
-        try {
-            $index->create($settings);
-        } catch (\Exception $exception) {
-            $json = json_decode($exception->getMessage(), true);
-            if (!$json['status'] === 400) {
-                throw $exception;
-            }
+        $documentTypes = $this->getDocumentTypes($indexName);
 
-            $error = $json['error'];
-
-            if ($error['type'] !== 'resource_already_exists_exception') {
-                throw $exception;
+        if ($documentTypes) {
+            $types = new ArrayList($documentTypes);
+            if ($types->find('name', strtolower($indexName))) {
+                return true;
             }
         }
 
-        return $index;
+        return $this->createDocumentType($indexName, $indexName);
+    }
+
+    public function hasEngine($indexName)
+    {
+        $url = sprintf(
+            '%sengines.json',
+            parse_url(Environment::getEnv('SS_SWIFTYPE_END_POINT'), PHP_URL_PATH)
+        );
+
+        $data = ['auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
+
+        $rawQuery = $this->initIndex($indexName);
+        $rawQuery['uri'] = $url;
+        $rawQuery['body'] = json_encode($data, JSON_PRESERVE_ZERO_FRACTION);
+
+        $this->rawQuery = $rawQuery;
+
+        $handler = $this->clientAPI;
+        $response = $handler($rawQuery);
+        $stream = Stream::factory($response['body']);
+        $response['body'] = $stream->getContents();
+        $body = new ArrayList(json_decode($response['body'], true));
+
+        return (bool) $body->find('name', strtolower($indexName));
+    }
+
+    public function getDocumentTypes($indexName)
+    {
+        $url = sprintf(
+            '%sengines/%s/document_types.json',
+            parse_url(Environment::getEnv('SS_SWIFTYPE_END_POINT'), PHP_URL_PATH),
+            strtolower($indexName)
+        );
+
+        $data = ['auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
+
+        $rawQuery = $this->initIndex($indexName);
+        $rawQuery['uri'] = $url;
+        $rawQuery['body'] = json_encode($data, JSON_PRESERVE_ZERO_FRACTION);
+
+        $this->rawQuery = $rawQuery;
+
+        $handler = $this->clientAPI;
+        $response = $handler($rawQuery);
+        $stream = Stream::factory($response['body']);
+        $response['body'] = $stream->getContents();
+
+        return json_decode($response['body'], true);
+    }
+
+    public function createEngine($indexName)
+    {
+        $rawQuery = $this->initIndex($indexName);
+        $url = sprintf(
+            '%sengines.json',
+            parse_url(Environment::getEnv('SS_SWIFTYPE_END_POINT'), PHP_URL_PATH)
+        );
+        $data = [
+            'auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
+            'engine' => ['name' => strtolower($indexName)],
+        ];
+
+        $rawQuery['http_method'] = 'POST';
+        $rawQuery['uri'] = $url;
+        $rawQuery['body'] = json_encode($data, JSON_PRESERVE_ZERO_FRACTION);
+
+        $this->rawQuery = $rawQuery;
+
+        $handler = $this->clientAPI;
+        $response = $handler($rawQuery);
+
+        return isset($response['status']) && 200 === $response['status'];
+    }
+
+    public function createDocumentType($type, $indexName)
+    {
+        $rawQuery = $this->initIndex($indexName);
+
+        $endPoint = Environment::getEnv('SS_SWIFTYPE_END_POINT');
+        $url = sprintf(
+            '%sengines/%s/document_types.json',
+            parse_url($endPoint, PHP_URL_PATH),
+            strtolower($indexName)
+        );
+        $data = [
+            'auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
+            'document_type' => ['name' => strtolower($type)],
+        ];
+
+        $rawQuery['http_method'] = 'POST';
+        $rawQuery['uri'] = $url;
+        $rawQuery['body'] = json_encode($data, JSON_PRESERVE_ZERO_FRACTION);
+
+        $this->rawQuery = $rawQuery;
+
+        $handler = $this->clientAPI;
+        $response = $handler($rawQuery);
+
+        return isset($response['status']) && 200 === $response['status'];
     }
 
     public function update($data)
@@ -237,8 +326,8 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
             $query['body']['query']['bool']['filter'] = $modifiers['filters'];
         }
 
-        $response = $this->callClientMethod('search', [$query]);
-        $total = (int) $response['hits']['total'];
+        $response       = $this->callClientMethod('search', [$query]);
+        $total          = (int) $response['hits']['total'];
         $this->response = ['_total' => $total] + $response;
 
         $hits = new ArrayList($this->response['hits']['hits']);
@@ -363,5 +452,10 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
         }
 
         return $modifiedFilter;
+    }
+
+    public function sql()
+    {
+        return $this->rawQuery;
     }
 }
