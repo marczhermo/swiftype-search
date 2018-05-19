@@ -7,7 +7,7 @@ use Symbiote\QueuedJobs\Services\QueuedJob;
 use SilverStripe\Assets\File;
 use SilverStripe\ORM\FieldType\DBDatetime;
 use SilverStripe\Core\Config\Config as FileConfig;
-use Marcz\Search\Processor\Exporter;
+use Marcz\Swiftype\Processor\SwiftExporter;
 use Marcz\Swiftype\SwiftypeClient;
 use Exception;
 use Marcz\Search\Config;
@@ -86,7 +86,7 @@ class JsonBulkExport extends AbstractQueuedJob implements QueuedJob
         $this->addMessage('Step 1: Create File');
 
         $file     = new File();
-        $exporter = Exporter::create();
+        $exporter = SwiftExporter::create();
         $dateTime = DBDatetime::now();
         $fileName = sprintf(
             '%s_export_%s_%d.json',

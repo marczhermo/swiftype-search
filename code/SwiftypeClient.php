@@ -63,7 +63,7 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
                 'host'  => [parse_url($endPoint, PHP_URL_HOST)],
                 'Content-Type' => ['application/json'],
             ],
-            'client'      => [
+            'client' => [
                 'curl' => [
                     CURLOPT_SSL_VERIFYHOST => 0,
                     CURLOPT_SSL_VERIFYPEER => false
@@ -195,45 +195,89 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
     public function update($data)
     {
         $indexName = strtolower($this->clientIndexName);
-        $params    = [
-            'index' => $indexName,
-            'type'  => $indexName,
-            'id'    => $data['ID'],
-            'body'  => ['upsert' => $data, 'doc' => $data]
+        $rawQuery = $this->initIndex($this->clientIndexName);
+
+        $endPoint = Environment::getEnv('SS_SWIFTYPE_END_POINT');
+        $url = sprintf(
+            '%1$sengines/%2$s/document_types/%2$s/documents/create_or_update.json',
+            parse_url($endPoint, PHP_URL_PATH),
+            $indexName
+        );
+        $data = [
+            'auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
+            'document' => $data,
         ];
 
-        $this->callClientMethod('update', [$params]);
+        $rawQuery['http_method'] = 'POST';
+        $rawQuery['uri'] = $url;
+        $rawQuery['body'] = json_encode($data, JSON_PRESERVE_ZERO_FRACTION);
+
+        $this->rawQuery = $rawQuery;
+
+        $handler = $this->clientAPI;
+        $response = $handler($rawQuery);
+        $stream = Stream::factory($response['body']);
+        $response['body'] = $stream->getContents();
+
+        return isset($response['status']) && 200 === $response['status'];
     }
 
     public function bulkUpdate($list)
     {
         $indexName = strtolower($this->clientIndexName);
-        $params    = [];
-        for ($i = 0; $i < count($list); $i++) {
-            $params['body'][] = [
-                'index' => [
-                    '_index' => $indexName,
-                    '_type'  => $indexName,
-                    '_id'    => $list[$i]['ID']
-                ]
-            ];
+        $rawQuery = $this->initIndex($this->clientIndexName);
 
-            $params['body'][] = $list[$i];
-        }
+        $endPoint = Environment::getEnv('SS_SWIFTYPE_END_POINT');
+        $url = sprintf(
+            '%1$sengines/%2$s/document_types/%2$s/documents/bulk_create_or_update_verbose',
+            parse_url($endPoint, PHP_URL_PATH),
+            $indexName
+        );
+        $data = [
+            'auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
+            'documents' => $list,
+        ];
 
-        $this->callClientMethod('bulk', [$params]);
+        $rawQuery['http_method'] = 'POST';
+        $rawQuery['uri'] = $url;
+        $rawQuery['body'] = json_encode($data, JSON_PRESERVE_ZERO_FRACTION);
+
+        $this->rawQuery = $rawQuery;
+
+        $handler = $this->clientAPI;
+        $response = $handler($rawQuery);
+        $stream = Stream::factory($response['body']);
+        $response['body'] = $stream->getContents();
+
+        return isset($response['status']) && 200 === $response['status'];
     }
 
     public function deleteRecord($recordID)
     {
         $indexName = strtolower($this->clientIndexName);
-        $params    = [
-            'index' => $indexName,
-            'type'  => $indexName,
-            'id'    => $recordID,
-        ];
+        $rawQuery = $this->initIndex($this->clientIndexName);
 
-        $this->callClientMethod('delete', [$params]);
+        $endPoint = Environment::getEnv('SS_SWIFTYPE_END_POINT');
+        $url = sprintf(
+            '%1$sengines/%2$s/document_types/%2$s/documents/%3$s.json',
+            parse_url($endPoint, PHP_URL_PATH),
+            $indexName,
+            $recordID
+        );
+        $data = ['auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
+
+        $rawQuery['http_method'] = 'DELETE';
+        $rawQuery['uri'] = $url;
+        $rawQuery['body'] = json_encode($data, JSON_PRESERVE_ZERO_FRACTION);
+
+        $this->rawQuery = $rawQuery;
+
+        $handler = $this->clientAPI;
+        $response = $handler($rawQuery);
+        $stream = Stream::factory($response['body']);
+        $response['body'] = $stream->getContents();
+
+        return isset($response['status']) && in_array($response['status'], [204, 404]);
     }
 
     public function createBulkExportJob($indexName, $className)

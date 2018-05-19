@@ -4,7 +4,7 @@ namespace Marcz\Swiftype\Jobs;
 
 use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJob;
-use Marcz\Search\Processor\Exporter;
+use Marcz\Swiftype\Processor\SwiftExporter;
 use Marcz\Swiftype\SwiftypeClient;
 use Exception;
 use SilverStripe\ORM\DataList;
@@ -61,7 +61,7 @@ class JsonExport extends AbstractQueuedJob implements QueuedJob
             throw new Exception('Record not found.');
         }
 
-        $exporter = Exporter::create();
+        $exporter = SwiftExporter::create();
         $client   = $this->createClient();
         $clientClassName = SwiftypeClient::class;
         $client->update(
