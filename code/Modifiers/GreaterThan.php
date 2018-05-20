@@ -12,8 +12,9 @@ class GreaterThan implements ModifyFilterable
     public function apply($key, $value)
     {
         return [
-            'range' => [
-                $key => ['gt' => $value]
+            $key => [
+                'type' => 'range',
+                'from' => $value
             ]
         ];
     }

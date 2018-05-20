@@ -319,67 +319,48 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
         singleton(QueuedJobService::class)->queueJob($job);
     }
 
-    public function search($term = '*', $filters = [], $pageNumber = 0, $pageLength = 20)
+    public function search($term = '', $filters = [], $pageNumber = 0, $pageLength = 20)
     {
+        $term = trim($term);
         $indexName = strtolower($this->clientIndexName);
-        $term      = trim($term);
-        $term      = empty($term) ? '*' : $term;
-        $terms     = explode(' ', $term);
 
-        // Add tilde for fuzziness on first word used for autocomplete
-        if ($term !== '*' && count($terms) === 1) {
-            $term = $term . '~';
-        }
+        $this->rawQuery = $this->initIndex($this->clientIndexName);
 
-        $query     = [
-            'index' => $indexName,
-            'type'  => $indexName,
-            'from'  => $pageNumber,
-            'size'  => $pageLength,
-            'body'  => [
-                'query' => [
-                    'bool' => [
-                        'must' => [
-                            [
-                                'query_string' => [
-                                    'query'            => $term,
-                                    'analyze_wildcard' => true,
-                                    'default_field'    => '*',
-                                    'fuzziness'        => 2,
-                                ]
-                            ],
-                        ],
-                        'filter'   => [],
-                        'should'   => [],
-                        'must_not' => [],
-                    ],
-                ],
-            ],
+        $endPoint = Environment::getEnv('SS_SWIFTYPE_END_POINT');
+        $url = sprintf(
+            '%sengines/%s/search.json',
+            parse_url($endPoint, PHP_URL_PATH),
+            $indexName
+        );
+        $data = [
+            'auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
+            'q' => $term,
+            'document_types' => [$indexName],
+            'page' => 1 + $pageNumber,
+            'per_page' => $pageLength,
+            'filters' => [$indexName => $this->translateFilterModifiers($filters)],
+            'facets' => [$indexName => []],
         ];
 
-        $facets    = $query['body']['query']['bool']['must'];
-        $modifiers = $this->translateFilterModifiers($filters);
+        $indexConfig = ArrayList::create(Config::config()->get('indices'))
+                        ->find('name', $this->clientIndexName);
 
-        if (isset($modifiers['facetFilters'])) {
-            $facets = array_merge($facets, $modifiers['facetFilters']);
-
-            $query['body']['query']['bool']['must'] = $facets;
+        if (!empty($indexConfig['attributesForFaceting'])) {
+            $data['facets'] = [$indexName => $indexConfig['attributesForFaceting']];
         }
 
-        if (isset($modifiers['filters'])) {
-            $query['body']['query']['bool']['filter'] = $modifiers['filters'];
-        }
+        $this->rawQuery['uri'] = $url;
+        $this->rawQuery['body'] = json_encode($data, JSON_PRESERVE_ZERO_FRACTION);
 
-        $response       = $this->callClientMethod('search', [$query]);
-        $total          = (int) $response['hits']['total'];
-        $this->response = ['_total' => $total] + $response;
+        $handler = $this->clientAPI;
+        $response = $handler($this->rawQuery);
+        $stream = Stream::factory($response['body']);
+        $response['body'] = $stream->getContents();
 
-        $hits = new ArrayList($this->response['hits']['hits']);
-        if ($total) {
-            $hits = new ArrayList($hits->column('_source'));
-        }
+        $this->response = json_decode($response['body'], true);
+        $this->response['_total'] = $this->response['record_count'];
 
-        return $hits;
+        return new ArrayList($this->response['records'][$indexName]);
     }
 
     public function getResponse()
@@ -411,7 +392,6 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
         }
 
         if ($forFilters) {
-            $query['filters'] = [];
             $modifiedFilter   = [];
 
             foreach ($forFilters as $filterArray) {
@@ -430,40 +410,20 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
                 }
             }
 
-            $query['filters'] = [
-                'bool' => ['must' => $modifiedFilter]
-            ];
+            foreach ($modifiedFilter as $filter) {
+                $column = key($filter);
+                $previous = isset($query[$column]) ? $query[$column] : [];
+                $query[$column] = array_merge($previous, current($filter));
+            }
         }
 
         if ($forFacets) {
-            $query['facetFilters'] = [];
-
             foreach ($forFacets as $filterArray) {
                 foreach ($filterArray as $key => $value) {
                     if (is_array($value)) {
-                        $phrases = array_map(
-                            function ($item) use ($key) {
-                                return [
-                                    'match_phrase' => [
-                                        $key => ['query' => $item]
-                                        ]
-                                    ];
-                            },
-                            $value
-                        );
-
-                        $query['facetFilters'][] = [
-                                'bool' => [
-                                    'should'               => $phrases,
-                                    'minimum_should_match' => 1
-                                ]
-                            ];
+                        $query[$key] = array_values($value);
                     } else {
-                        $query['facetFilters'][] = [
-                            'match_phrase' => [
-                                $key => ['query' => $value]
-                            ]
-                        ];
+                        $query[$key] = $value;
                     }
                 }
             }

@@ -12,8 +12,9 @@ class LessThanOrEqual implements ModifyFilterable
     public function apply($key, $value)
     {
         return [
-            'range' => [
-                $key => ['lte' => $value]
+            $key => [
+                'type' => 'range',
+                'to' => $value
             ]
         ];
     }

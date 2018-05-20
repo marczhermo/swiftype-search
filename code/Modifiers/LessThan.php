@@ -12,8 +12,9 @@ class LessThan implements ModifyFilterable
     public function apply($key, $value)
     {
         return [
-            'range' => [
-                $key => ['lt' => $value]
+            $key => [
+                'type' => 'range',
+                'to' => $value
             ]
         ];
     }
