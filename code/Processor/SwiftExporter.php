@@ -41,7 +41,7 @@ class SwiftExporter extends Exporter
 
         $record = $dataObject->toMap();
         $fields = DataObject::getSchema()
-            ->databaseFields($dataClassName, $aggregate = false);
+            ->databaseFields($dataClassName, $aggregate = true);
 
         $document = [
             'external_id' => $record['ID'],
@@ -135,6 +135,12 @@ class SwiftExporter extends Exporter
     public function bulkExport($className, $startAt = 0, $max = 0, $clientClassName = null)
     {
         $list   = new DataList($className);
+        $fields = DataObject::getSchema()
+            ->databaseFields($className, $aggregate = true);
+        if (isset($fields['ShowInSearch'])) {
+            $list = $list->filter('ShowInSearch', true);
+        }
+
         $total  = $list->count();
         $length = 20;
         $max    = $max ?: Config::config()->get('batch_length');
