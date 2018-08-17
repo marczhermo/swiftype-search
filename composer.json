@@ -29,12 +29,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Marcz\\Swiftype\\": "code/",
+            "Marcz\\Swiftype\\": "src/",
             "Marcz\\Swiftype\\Tests\\": "tests/php/"
         }
     },
     "scripts": {
-        "lint": "php phpcs.phar code/ tests/php/"
+        "lint": "php phpcs.phar src/ tests/php/"
     },
     "minimum-stability": "dev",
     "prefer-stable": true
