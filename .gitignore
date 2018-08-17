@@ -12,3 +12,5 @@
 /mysite
 /app
 coverage.xml
+phpcbf.phar
+phpcs.phar

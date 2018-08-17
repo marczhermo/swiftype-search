@@ -9,20 +9,6 @@ use GuzzleHttp\Ring\Client\CurlHandler;
 use GuzzleHttp\Ring\Client\MockHandler;
 use GuzzleHttp\Stream\Stream;
 
-class FakeStreamArray
-{
-    protected $data;
-    public function __construct($data = [])
-    {
-        $this->data = $data;
-    }
-
-    public function __toString()
-    {
-        return json_encode($this->data);
-    }
-}
-
 class SwiftypeClientTest extends SapphireTest
 {
     protected function setUp()

@@ -291,9 +291,9 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
 
         for ($offset = 0; $offset < $totalPages; $offset++) {
             $job = Injector::inst()->createWithArgs(
-                    JsonBulkExport::class,
-                    [$indexName, $className, $offset * $batchLength]
-                );
+                JsonBulkExport::class,
+                [$indexName, $className, $offset * $batchLength]
+            );
 
             singleton(QueuedJobService::class)->queueJob($job);
         }
@@ -302,9 +302,9 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
     public function createExportJob($indexName, $className, $recordId)
     {
         $job = Injector::inst()->createWithArgs(
-                JsonExport::class,
-                [$indexName, $className, $recordId]
-            );
+            JsonExport::class,
+            [$indexName, $className, $recordId]
+        );
 
         singleton(QueuedJobService::class)->queueJob($job);
     }
@@ -312,9 +312,9 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
     public function createDeleteJob($indexName, $className, $recordId)
     {
         $job = Injector::inst()->createWithArgs(
-                DeleteRecord::class,
-                [$indexName, $className, $recordId]
-            );
+            DeleteRecord::class,
+            [$indexName, $className, $recordId]
+        );
 
         singleton(QueuedJobService::class)->queueJob($job);
     }

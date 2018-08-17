@@ -34,7 +34,7 @@
         }
     },
     "scripts": {
-        "lint": "phpcs src/ tests/php/ tests/behat/src/"
+        "lint": "php phpcs.phar code/ tests/php/"
     },
     "minimum-stability": "dev",
     "prefer-stable": true
