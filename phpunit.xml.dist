@@ -2,8 +2,17 @@
 Standard module phpunit configuration.
 Requires PHPUnit ^5.7
 -->
-<phpunit bootstrap="vendor/silverstripe/framework/tests/bootstrap.php" colors="true">
+<phpunit bootstrap="vendor/silverstripe/cms/tests/bootstrap.php" colors="true">
 	<testsuite name="Default">
 		<directory>tests/php</directory>
     </testsuite>
+    <filter>
+        <whitelist addUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">.</directory>
+            <exclude>
+                <directory suffix=".php">tests/</directory>
+                <directory suffix=".php">thirdparty/</directory>
+            </exclude>
+        </whitelist>
+    </filter>
 </phpunit>

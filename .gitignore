@@ -4,7 +4,10 @@
 /**/*.js.map
 /**/*.css.map
 .env
+.codecov
 /code/Page.php
 /code/PageController.php
 /resources
 /assets
+/mysite
+coverage.xml
