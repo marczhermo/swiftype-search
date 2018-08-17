@@ -1,5 +1,11 @@
 # Swiftype Search
 
+[![Build Status](https://travis-ci.org/marczhermo/swiftype-search.svg?branch=master)](https://travis-ci.org/marczhermo/swiftype-search)
+[![Latest Stable Version](https://poser.pugx.org/marczhermo/swiftype-search/v/stable)](https://packagist.org/packages/marczhermo/swiftype-search)
+[![codecov](https://codecov.io/gh/marczhermo/swiftype-search/branch/master/graph/badge.svg)](https://codecov.io/gh/marczhermo/swiftype-search)
+[![Total Downloads](https://poser.pugx.org/marczhermo/swiftype-search/downloads)](https://packagist.org/packages/marczhermo/swiftype-search)
+[![License](https://poser.pugx.org/marczhermo/swiftype-search/license)](https://packagist.org/packages/marczhermo/swiftype-search)
+
 ## Overview
 
 More contents soon.
