@@ -25,10 +25,13 @@ class SwiftExporter extends Exporter
     {
         $dataClassName = get_class($dataObject);
         if ($dataObject->has_extension(Versioned::class)) {
-            $dataObject = Versioned::get_by_stage(
+            $liveVersion = Versioned::get_by_stage(
                 $dataClassName,
                 'Live'
             )->byID($dataObject->ID);
+            if ($liveVersion) {
+                $dataObject = $liveVersion;
+            }
         }
 
         $hasOne   = (array) $dataObject->config()->get('has_one');
