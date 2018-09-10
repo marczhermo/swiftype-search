@@ -2,11 +2,11 @@
 
 namespace Marcz\Swiftype\Jobs;
 
-use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
-use Symbiote\QueuedJobs\Services\QueuedJob;
-use SilverStripe\Assets\File;
-use SilverStripe\ORM\FieldType\DBDatetime;
-use SilverStripe\Core\Config\Config as FileConfig;
+use AbstractQueuedJob;
+use QueuedJob;
+use File;
+use SS_Datetime;
+use Config as FileConfig;
 use Marcz\Swiftype\Processor\SwiftExporter;
 use Marcz\Swiftype\SwiftypeClient;
 use Exception;
@@ -87,7 +87,7 @@ class JsonBulkExport extends AbstractQueuedJob implements QueuedJob
 
         $file     = new File();
         $exporter = SwiftExporter::create();
-        $dateTime = DBDatetime::now();
+        $dateTime = SS_Datetime::now();
         $fileName = sprintf(
             '%s_export_%s_%d.json',
             $this->className,
@@ -98,16 +98,27 @@ class JsonBulkExport extends AbstractQueuedJob implements QueuedJob
 
         $this->bulkArray = $exporter->bulkExport($this->className, $this->offset, $batchLength, SwiftypeClient::class);
 
-        FileConfig::modify()->set(File::class, 'allowed_extensions', ['json']);
-        $file->setFromString(json_encode($this->bulkArray), $fileName);
+        FileConfig::inst()->update(File::class, 'allowed_extensions', ['json']);
+        $file->setFilename($fileName);
         $file->write();
-        $file->publishFile();
+        if (method_exists($file, 'publishFile')) {
+            $file->publishFile();
+        }
+        $this->writeToFile($file->getFilename(), json_encode($this->bulkArray));
 
         $this->fileId = $file->ID;
 
         $this->addMessage('<p><a href="' . $file->getAbsoluteURL() . '" target="_blank">' . $fileName . '</a></p>');
 
         return true;
+    }
+
+    public function writeToFile($filename, $data)
+    {
+        //$file->setFromString(json_encode($this->bulkArray), $fileName);
+        $file = fopen(BASE_PATH . '/' . $filename, "w");
+        fwrite($file, $data);
+        fclose($file);
     }
 
     public function stepSendFile()

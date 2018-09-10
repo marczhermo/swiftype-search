@@ -2,13 +2,11 @@
 
 namespace Marcz\Swiftype\Modifiers;
 
-use SilverStripe\Core\Injector\Injectable;
+use Object;
 use Marcz\Search\Client\ModifyFilterable;
 
-class GreaterThanOrEqual implements ModifyFilterable
+class GreaterThanOrEqual extends Object implements ModifyFilterable
 {
-    use Injectable;
-
     public function apply($key, $value)
     {
         return [

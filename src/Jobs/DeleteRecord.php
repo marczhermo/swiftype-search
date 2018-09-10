@@ -2,8 +2,8 @@
 
 namespace Marcz\Swiftype\Jobs;
 
-use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
-use Symbiote\QueuedJobs\Services\QueuedJob;
+use AbstractQueuedJob;
+use QueuedJob;
 use Marcz\Swiftype\SwiftypeClient;
 use Exception;
 

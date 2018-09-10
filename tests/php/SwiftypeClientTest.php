@@ -1,21 +1,25 @@
 <?php
 namespace Marcz\Swiftype\Tests;
 
-use SilverStripe\Dev\SapphireTest;
-use SilverStripe\Dev\TestOnly;
-use SilverStripe\Core\Environment;
+use SapphireTest;
+use TestOnly;
 use Marcz\Swiftype\SwiftypeClient;
 use GuzzleHttp\Ring\Client\CurlHandler;
 use GuzzleHttp\Ring\Client\MockHandler;
 use GuzzleHttp\Stream\Stream;
+use Director;
 
 class SwiftypeClientTest extends SapphireTest
 {
-    protected function setUp()
+    public function setUp()
     {
         parent::setUp();
-        Environment::setEnv('SS_SWIFTYPE_END_POINT', 'http://api.swiftype.com/api/v1/');
-        Environment::setEnv('SS_SWIFTYPE_AUTH_TOKEN', 'SS_SWIFTYPE_AUTH_TOKEN');
+        if (!defined('SS_SWIFTYPE_END_POINT')) {
+            define('SS_SWIFTYPE_END_POINT', 'http://api.swiftype.com/api/v1/');
+        }
+        if (!defined('SS_SWIFTYPE_AUTH_TOKEN')) {
+            define('SS_SWIFTYPE_AUTH_TOKEN', 'SS_SWIFTYPE_AUTH_TOKEN');
+        }
     }
 
     protected function fetchMockedResponse($data = [], $status = 200)
@@ -71,7 +75,7 @@ class SwiftypeClientTest extends SapphireTest
     public function testHasEngine()
     {
         $client = new SwiftypeClient;
-        $data = ['auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
+        $data = ['auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
         $expected = [
             'http_method' => 'GET',
             'uri' => '/api/v1/engines.json',
@@ -97,7 +101,7 @@ class SwiftypeClientTest extends SapphireTest
     public function testGetDocumentTypes()
     {
         $client = new SwiftypeClient;
-        $data = ['auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
+        $data = ['auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
         $expected = [
             'http_method' => 'GET',
             'uri' => '/api/v1/engines/myproducts/document_types.json',
@@ -179,5 +183,14 @@ class SwiftypeClientTest extends SapphireTest
 
         $this->assertTrue($client->createDocumentType('MyProducts', 'MyProducts'));
         $this->assertEquals($expected, $client->sql());
+    }
+
+    public function getEnv($name)
+    {
+        if (Director::isDev() && Director::is_cli() && $name == 'SS_SWIFTYPE_AUTH_TOKEN') {
+            return 'SS_SWIFTYPE_AUTH_TOKEN';
+        }
+        // return Environment::getEnv($name);
+        return constant($name);
     }
 }

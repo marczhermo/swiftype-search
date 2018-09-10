@@ -2,15 +2,12 @@
 
 namespace Marcz\Swiftype;
 
-use SilverStripe\Core\Injector\Injectable;
-use SilverStripe\Core\Environment;
-use SilverStripe\Core\Injector\Injector;
-use SilverStripe\Core\Config\Configurable;
-use Symbiote\QueuedJobs\Services\QueuedJobService;
+use Injector;
+use QueuedJobService;
 use Marcz\Swiftype\Jobs\JsonBulkExport;
 use Marcz\Swiftype\Jobs\JsonExport;
-use SilverStripe\ORM\DataList;
-use SilverStripe\ORM\ArrayList;
+use DataList;
+use ArrayList;
 use Marcz\Search\Config;
 use Marcz\Search\Client\SearchClientAdaptor;
 use Marcz\Swiftype\Jobs\DeleteRecord;
@@ -19,11 +16,11 @@ use GuzzleHttp\Stream\Stream;
 use Marcz\Search\Client\DataWriter;
 use Marcz\Search\Client\DataSearcher;
 use Exception;
+use Object;
+use Director;
 
-class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
+class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, DataSearcher
 {
-    use Injectable, Configurable;
-
     protected $authToken;
     protected $clientIndexName;
     protected $clientAPI;
@@ -54,7 +51,7 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
 
         $this->clientIndexName = $indexName;
 
-        $endPoint = Environment::getEnv('SS_SWIFTYPE_END_POINT');
+        $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
         $this->rawQuery = [
             'http_method'   => 'GET',
             'uri'           => parse_url($endPoint, PHP_URL_PATH),
@@ -97,10 +94,10 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
     {
         $url = sprintf(
             '%sengines.json',
-            parse_url(Environment::getEnv('SS_SWIFTYPE_END_POINT'), PHP_URL_PATH)
+            parse_url($this->getEnv('SS_SWIFTYPE_END_POINT'), PHP_URL_PATH)
         );
 
-        $data = ['auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
+        $data = ['auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
 
         $rawQuery = $this->initIndex($indexName);
         $rawQuery['uri'] = $url;
@@ -121,11 +118,11 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
     {
         $url = sprintf(
             '%sengines/%s/document_types.json',
-            parse_url(Environment::getEnv('SS_SWIFTYPE_END_POINT'), PHP_URL_PATH),
+            parse_url($this->getEnv('SS_SWIFTYPE_END_POINT'), PHP_URL_PATH),
             strtolower($indexName)
         );
 
-        $data = ['auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
+        $data = ['auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
 
         $rawQuery = $this->initIndex($indexName);
         $rawQuery['uri'] = $url;
@@ -146,10 +143,10 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
         $rawQuery = $this->initIndex($indexName);
         $url = sprintf(
             '%sengines.json',
-            parse_url(Environment::getEnv('SS_SWIFTYPE_END_POINT'), PHP_URL_PATH)
+            parse_url($this->getEnv('SS_SWIFTYPE_END_POINT'), PHP_URL_PATH)
         );
         $data = [
-            'auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
+            'auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
             'engine' => ['name' => strtolower($indexName)],
         ];
 
@@ -169,14 +166,14 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
     {
         $rawQuery = $this->initIndex($indexName);
 
-        $endPoint = Environment::getEnv('SS_SWIFTYPE_END_POINT');
+        $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
         $url = sprintf(
             '%sengines/%s/document_types.json',
             parse_url($endPoint, PHP_URL_PATH),
             strtolower($indexName)
         );
         $data = [
-            'auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
+            'auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
             'document_type' => ['name' => strtolower($type)],
         ];
 
@@ -197,14 +194,14 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
         $indexName = strtolower($this->clientIndexName);
         $rawQuery = $this->initIndex($this->clientIndexName);
 
-        $endPoint = Environment::getEnv('SS_SWIFTYPE_END_POINT');
+        $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
         $url = sprintf(
             '%1$sengines/%2$s/document_types/%2$s/documents/create_or_update.json',
             parse_url($endPoint, PHP_URL_PATH),
             $indexName
         );
         $data = [
-            'auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
+            'auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
             'document' => $data,
         ];
 
@@ -227,14 +224,14 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
         $indexName = strtolower($this->clientIndexName);
         $rawQuery = $this->initIndex($this->clientIndexName);
 
-        $endPoint = Environment::getEnv('SS_SWIFTYPE_END_POINT');
+        $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
         $url = sprintf(
             '%1$sengines/%2$s/document_types/%2$s/documents/bulk_create_or_update_verbose',
             parse_url($endPoint, PHP_URL_PATH),
             $indexName
         );
         $data = [
-            'auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
+            'auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
             'documents' => $list,
         ];
 
@@ -257,14 +254,14 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
         $indexName = strtolower($this->clientIndexName);
         $rawQuery = $this->initIndex($this->clientIndexName);
 
-        $endPoint = Environment::getEnv('SS_SWIFTYPE_END_POINT');
+        $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
         $url = sprintf(
             '%1$sengines/%2$s/document_types/%2$s/documents/%3$s.json',
             parse_url($endPoint, PHP_URL_PATH),
             $indexName,
             $recordID
         );
-        $data = ['auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
+        $data = ['auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
 
         $rawQuery['http_method'] = 'DELETE';
         $rawQuery['uri'] = $url;
@@ -326,14 +323,14 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
 
         $this->rawQuery = $this->initIndex($this->clientIndexName);
 
-        $endPoint = Environment::getEnv('SS_SWIFTYPE_END_POINT');
+        $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
         $url = sprintf(
             '%sengines/%s/search.json',
             parse_url($endPoint, PHP_URL_PATH),
             $indexName
         );
         $data = [
-            'auth_token' => Environment::getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
+            'auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
             'q' => $term,
             'document_types' => [$indexName],
             'page' => 1 + $pageNumber,
@@ -461,5 +458,14 @@ class SwiftypeClient implements SearchClientAdaptor, DataWriter, DataSearcher
     public function sql()
     {
         return $this->rawQuery;
+    }
+
+    public function getEnv($name)
+    {
+        if (Director::isDev() && Director::is_cli() && $name == 'SS_SWIFTYPE_AUTH_TOKEN') {
+            return 'SS_SWIFTYPE_AUTH_TOKEN';
+        }
+        // return Environment::getEnv($name);
+        return constant($name);
     }
 }

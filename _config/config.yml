@@ -1,10 +1,9 @@
 ---
 Name: swiftypesearch
 ---
-SilverStripe\Admin\LeftAndMain:
+LeftAndMain:
   extensions:
     - Marcz\Swiftype\SwiftypeAdminExtension
-
 Marcz\Search\Config:
   clients:
     - name: 'Swiftype'

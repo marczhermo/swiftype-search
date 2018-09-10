@@ -2,8 +2,8 @@
 
 namespace Marcz\Swiftype;
 
-use SilverStripe\Core\Extension;
-use SilverStripe\View\Requirements;
+use Extension;
+use Requirements;
 
 class SwiftypeAdminExtension extends Extension
 {

@@ -2,7 +2,7 @@
 
 namespace Marcz\Swiftype\Extensions;
 
-use SilverStripe\Core\Extension;
+use Extension;
 use Marcz\Swiftype\SwiftypeClient;
 
 class Exporter extends Extension
