@@ -5,9 +5,8 @@ sudo: false
 env:
   global:
     - COMPOSER_ROOT_VERSION=1.0.x-dev
-    - CORE_RELEASE=4
+    - CORE_RELEASE=3
     # The path of the module when installed by composer
-    - MODULE_PATH=swiftype-search
 
 matrix:
   fast_finish: true
@@ -28,4 +27,4 @@ before_script:
   - cd ~/builds/ss
 
 script:
-  - vendor/bin/phpunit $MODULE_PATH/tests
+  - vendor/bin/phpunit swiftype-search/tests/php/
