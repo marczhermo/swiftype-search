@@ -1,7 +1,7 @@
 {
     "name": "marczhermo/swiftype-search",
     "description": "Swiftype SilverStripe Module For Search",
-    "type": "silverstripe-vendormodule",
+    "type": "silverstripe-module",
     "license": "BSD-3-Clause",
     "keywords": [
         "swiftype",

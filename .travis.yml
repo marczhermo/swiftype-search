@@ -27,4 +27,4 @@ before_script:
   - cd ~/builds/ss
 
 script:
-  - vendor/bin/phpunit swiftype-search/tests/php/
+  - vendor/bin/phpunit swiftype-search/tests/

@@ -8,7 +8,46 @@
 
 ## Overview
 
-More contents soon.
+This is a client module which connects to Swiftype API for sending configuration, data model and fetching.
+
+## Usage
+
+The example below uses the 'Swiftype' client as the 3rd parameter on the createSearch() method.
+
+````
+// Controller method using the module's interface
+$properties = $this->createSearch(
+    $request->getVar('Keywords'), 'Properties', 'Swiftype'
+);
+$properties->filter([
+    'AvailableStart:LessThanOrEqual' => $startDate,
+    'AvailableEnd:GreaterThanOrEqual' => $endDate
+]);
+
+return ['Results' =>$properties->fetch()]; // ArrayList
+````
+
+## Installation
+
+SilverStripe 3
+
+````
+composer require marczhermo/swiftype-search:^0.1
+````
+
+SilverStripe 4
+
+````
+composer require marczhermo/swiftype-search
+````
+
+## Requirements
+This module needs the following packages:
+````
+"marczhermo/search-list": "^0.1.0",
+"guzzlehttp/ringphp": "^1.1",
+"silverstripe/queuedjobs": "^2"
+````
 
 ## Versioning
 
