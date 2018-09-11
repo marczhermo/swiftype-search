@@ -18,6 +18,7 @@ use Marcz\Search\Client\DataSearcher;
 use Exception;
 use Object;
 use Director;
+use Versioned;
 
 class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, DataSearcher
 {
@@ -298,6 +299,23 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
 
     public function createExportJob($indexName, $className, $recordId)
     {
+        $list   = new DataList($className);
+        $record = $list->byID($recordId);
+
+        if (!$record) {
+            return;
+        }
+
+        if ($record->hasExtension(Versioned::class)) {
+            $record = Versioned::get_by_stage(
+                $className,
+                'Live'
+            )->byID($recordId);
+            if (!$record) {
+                return null;
+            }
+        }
+
         $job = Injector::inst()->createWithArgs(
             JsonExport::class,
             [$indexName, $className, $recordId]

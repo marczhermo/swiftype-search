@@ -24,13 +24,13 @@ class SwiftExporter extends Exporter
     public function export($dataObject, $clientClassName = null)
     {
         $dataClassName = get_class($dataObject);
-        if ($dataObject->has_extension(Versioned::class)) {
-            $liveVersion = Versioned::get_by_stage(
+        if ($dataObject->hasExtension(Versioned::class)) {
+            $dataObject = Versioned::get_by_stage(
                 $dataClassName,
                 'Live'
             )->byID($dataObject->ID);
-            if ($liveVersion) {
-                $dataObject = $liveVersion;
+            if (!$dataObject) {
+                return null;
             }
         }
 
@@ -152,7 +152,9 @@ class SwiftExporter extends Exporter
                     break;
                 }
 
-                $bulk[] = $this->export($page, $clientClassName);
+                if ($exportData = $this->export($page, $clientClassName)) {
+                    $bulk[] = $exportData;
+                }
                 $page->destroy();
                 unset($page);
                 $count++;
