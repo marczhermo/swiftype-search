@@ -44,7 +44,7 @@ composer require marczhermo/swiftype-search
 ## Requirements
 This module needs the following packages:
 ````
-"marczhermo/search-list": "^0.1.0",
+"marczhermo/search-list": "^0.1",
 "guzzlehttp/ringphp": "^1.1",
 "silverstripe/queuedjobs": "^2"
 ````
