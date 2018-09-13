@@ -5,18 +5,22 @@ namespace Marcz\Swiftype;
 use Injector;
 use QueuedJobService;
 use Marcz\Swiftype\Jobs\JsonBulkExport;
+use Marcz\Swiftype\Jobs\CrawlBulkExport;
 use Marcz\Swiftype\Jobs\JsonExport;
+use Marcz\Swiftype\Jobs\CrawlExport;
+use Marcz\Swiftype\Jobs\DeleteRecord;
+use Marcz\Swiftype\Jobs\CrawlDeleteRecord;
 use DataList;
 use ArrayList;
-use Marcz\Search\Config;
+use Marcz\Search\Config as SearchConfig;
 use Marcz\Search\Client\SearchClientAdaptor;
-use Marcz\Swiftype\Jobs\DeleteRecord;
 use GuzzleHttp\Ring\Client\CurlHandler;
 use GuzzleHttp\Stream\Stream;
 use Marcz\Search\Client\DataWriter;
 use Marcz\Search\Client\DataSearcher;
 use Exception;
 use Object;
+use Config;
 use Director;
 use Versioned;
 
@@ -81,14 +85,7 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
 
         $documentTypes = $this->getDocumentTypes($indexName);
 
-        if ($documentTypes) {
-            $types = new ArrayList($documentTypes);
-            if ($types->find('name', strtolower($indexName))) {
-                return true;
-            }
-        }
-
-        return $this->createDocumentType($indexName, $indexName);
+        return $documentTypes ?: $this->createDocumentType($indexName, $indexName);
     }
 
     public function hasEngine($indexName)
@@ -280,16 +277,20 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
 
     public function createBulkExportJob($indexName, $className)
     {
+        $indexConfig = ArrayList::create(SearchConfig::config()->get('indices'))
+                        ->find('name', $indexName);
+        $exportClass = (empty($indexConfig['crawlBased'])) ? JsonBulkExport::class : CrawlBulkExport::class;
+
         $list        = new DataList($className);
         $total       = $list->count();
-        $batchLength = self::config()->get('batch_length') ?: Config::config()->get('batch_length');
+        $batchLength = self::config()->get('batch_length') ?: SearchConfig::config()->get('batch_length');
         $totalPages  = ceil($total / $batchLength);
 
         $this->initIndex($indexName);
 
         for ($offset = 0; $offset < $totalPages; $offset++) {
             $job = Injector::inst()->createWithArgs(
-                JsonBulkExport::class,
+                $exportClass,
                 [$indexName, $className, $offset * $batchLength]
             );
 
@@ -299,6 +300,10 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
 
     public function createExportJob($indexName, $className, $recordId)
     {
+        $indexConfig = ArrayList::create(SearchConfig::config()->get('indices'))
+                        ->find('name', $indexName);
+        $exportClass = (empty($indexConfig['crawlBased'])) ? JsonExport::class : CrawlExport::class;
+
         $list   = new DataList($className);
         $record = $list->byID($recordId);
 
@@ -317,7 +322,7 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
         }
 
         $job = Injector::inst()->createWithArgs(
-            JsonExport::class,
+            $exportClass,
             [$indexName, $className, $recordId]
         );
 
@@ -326,8 +331,12 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
 
     public function createDeleteJob($indexName, $className, $recordId)
     {
+        $indexConfig = ArrayList::create(SearchConfig::config()->get('indices'))
+            ->find('name', $indexName);
+        $exportClass = (empty($indexConfig['crawlBased'])) ? DeleteRecord::class : CrawlDeleteRecord::class;
+
         $job = Injector::inst()->createWithArgs(
-            DeleteRecord::class,
+            $exportClass,
             [$indexName, $className, $recordId]
         );
 
@@ -357,7 +366,7 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
             'facets' => [$indexName => []],
         ];
 
-        $indexConfig = ArrayList::create(Config::config()->get('indices'))
+        $indexConfig = ArrayList::create(SearchConfig::config()->get('indices'))
                         ->find('name', $this->clientIndexName);
 
         if (!empty($indexConfig['attributesForFaceting'])) {
