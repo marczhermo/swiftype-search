@@ -179,6 +179,19 @@ class SwiftExporter extends Exporter
     {
         $schema = ['type' => 'enum', 'name'  => $column, 'value' => $value];
 
+        $stringTypes = ['Name', 'Title'] + $searchableAttributes;
+        if (in_array($column, $stringTypes)) {
+            $schema['type'] = 'string';
+
+            return $schema;
+        }
+
+        if (strpos($fieldType, 'Varchar') !== false) {
+            $schema['type'] = 'string';
+
+            return $schema;
+        }
+
         if ($column === 'ID' || in_array($fieldType, ['PrimaryKey', 'ForeignKey'])) {
             $schema['type'] = 'integer';
             $schema['value'] = (int) $value;
@@ -188,19 +201,6 @@ class SwiftExporter extends Exporter
 
         if (strpos($fieldType, 'HTML') !== false || $column === 'Content') {
             $schema['type'] = 'text';
-
-            return $schema;
-        }
-
-        if (strpos($fieldType, 'Varchar') !== false) {
-            $schema['type'] = 'text';
-
-            return $schema;
-        }
-
-        $stringTypes = ['Name', 'Title'] + $searchableAttributes;
-        if (in_array($column, $stringTypes)) {
-            $schema['type'] = 'string';
 
             return $schema;
         }
