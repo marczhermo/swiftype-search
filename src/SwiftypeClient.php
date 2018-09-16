@@ -360,7 +360,7 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
             'auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
             'q' => $term,
             'document_types' => [$indexName],
-            'page' => 1 + $pageNumber,
+            'page' => $pageNumber ?: 1,
             'per_page' => $pageLength,
             'filters' => [$indexName => $this->translateFilterModifiers($filters)],
             'facets' => [$indexName => []],
@@ -382,9 +382,25 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
         $response['body'] = $stream->getContents();
 
         $this->response = json_decode($response['body'], true);
-        $this->response['_total'] = $this->response['record_count'];
+        $this->response['_total'] = $this->response['info'][$indexName]['total_result_count'];
 
-        return new ArrayList($this->response['records'][$indexName]);
+        $recordData = array_map(
+            function($item) {
+                return $this->mapToDataObject($item);
+            },
+            $this->response['records'][$indexName]
+        );
+
+        return new ArrayList($recordData);
+    }
+
+    public function mapToDataObject($record)
+    {
+        $indices = ArrayList::create(SearchConfig::config()->get('indices'));
+        $index   = $indices->find('name', $this->clientIndexName);
+        $className = $index['class'];
+
+        return Injector::inst()->createWithArgs($className, [$record]);
     }
 
     public function getResponse()
