@@ -385,9 +385,7 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
         $this->response['_total'] = $this->response['info'][$indexName]['total_result_count'];
 
         $recordData = array_map(
-            function($item) {
-                return $this->mapToDataObject($item);
-            },
+            [$this, 'mapToDataObject'],
             $this->response['records'][$indexName]
         );
 
@@ -396,11 +394,7 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
 
     public function mapToDataObject($record)
     {
-        $indices = ArrayList::create(SearchConfig::config()->get('indices'));
-        $index   = $indices->find('name', $this->clientIndexName);
-        $className = $index['class'];
-
-        return Injector::inst()->createWithArgs($className, [$record]);
+        return Injector::inst()->createWithArgs($record['ClassName'], [$record]);
     }
 
     public function getResponse()
