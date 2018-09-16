@@ -40,6 +40,7 @@ class SwiftExporter extends Exporter
 
         $record = $dataObject->toMap();
         $fields = Config::databaseFields($dataClassName);
+        $this->extend('updateExport', $record, $clientClassName);
 
         $document = [
             'external_id' => $record['ID'],
@@ -53,6 +54,12 @@ class SwiftExporter extends Exporter
                     $value,
                     $fields[$column]
                 );
+            } else {
+                $document['fields'][] = [
+                    'type' => 'enum',
+                    'name'  => $column,
+                    'value' => $value
+                ];
             }
         }
 
@@ -124,7 +131,6 @@ class SwiftExporter extends Exporter
             }
         }
 
-        $this->extend('updateExport', $document, $clientClassName);
         $dataObject->destroy();
 
         return $document;
