@@ -8,7 +8,9 @@
 
 ## Overview
 
-More contents soon.
+Uses the [Swiftype Site Search API](https://swiftype.com/documentation/site-search/overview) to push content as structured data to one or more Swiftype engines. Provides a client to search through the API.
+
+For usage of the [Swiftype Site Search Crawler](https://swiftype.com/documentation/site-search/overview#engine_types), please use the [ichaber/silverstripe-swiftype](https://github.com/ichaber/silverstripe-swiftype) module instead.
 
 ## Versioning
 
