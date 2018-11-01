@@ -12,6 +12,11 @@ Uses the [Swiftype Site Search API](https://swiftype.com/documentation/site-sear
 
 For usage of the [Swiftype Site Search Crawler](https://swiftype.com/documentation/site-search/overview#engine_types), please use the [ichaber/silverstripe-swiftype](https://github.com/ichaber/silverstripe-swiftype) module instead.
 
+## SilverStripe 3
+
+Originally built for SS4, a rework has been done to make this module compatible with SilverStripe 3.
+Please check this branch, https://github.com/marczhermo/swiftype-search/blob/3/README.md
+
 ## Versioning
 
 This library follows [Semver](http://semver.org). According to Semver,
