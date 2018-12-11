@@ -288,6 +288,18 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
 
         $this->initIndex($indexName);
 
+        if ($exportClass === CrawlBulkExport::class) {
+            $service = singleton(QueuedJobService::class);
+            $job = Injector::inst()->createWithArgs(
+                $exportClass,
+                [$indexName, $className]
+            );
+            $jobId = $service->queueJob($job);
+            $service->runJob($jobId);
+
+            return;
+        }
+
         for ($offset = 0; $offset < $totalPages; $offset++) {
             $job = Injector::inst()->createWithArgs(
                 $exportClass,
@@ -326,7 +338,13 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
             [$indexName, $className, $recordId]
         );
 
-        singleton(QueuedJobService::class)->queueJob($job);
+        $service = singleton(QueuedJobService::class);
+        $jobId = $service->queueJob($job);
+
+        // Runs the queue job immediately for crawl based approach.
+        if ($exportClass === CrawlExport::class) {
+            $service->runJob($jobId);
+        }
     }
 
     public function createDeleteJob($indexName, $className, $recordId)
@@ -340,7 +358,13 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
             [$indexName, $className, $recordId]
         );
 
-        singleton(QueuedJobService::class)->queueJob($job);
+        $service = singleton(QueuedJobService::class);
+        $jobId = $service->queueJob($job);
+
+        // Runs the queue job immediately for crawl based approach.
+        if ($exportClass === CrawlDeleteRecord::class) {
+            $service->runJob($jobId);
+        }
     }
 
     public function search($term = '', $filters = [], $pageNumber = 0, $pageLength = 20)
