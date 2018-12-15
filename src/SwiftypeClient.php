@@ -507,7 +507,13 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
         $stream = Stream::factory($response['body']);
         $response['body'] = $stream->getContents();
 
-        return in_array($response->wait()['reason'], ['OK', 'Created']);
+        if (in_array($response->wait()['reason'], ['OK', 'Created'])) {
+            return $response->wait()['reason'];
+        }
+
+        $body = json_decode($response->wait()['body'] , true);
+
+        return $body['error'];
     }
 
     public function mapToDataObject($record)

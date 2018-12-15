@@ -75,11 +75,12 @@ class CrawlBulkExport extends AbstractQueuedJob implements QueuedJob
 
         $this->addMessage('Domain to crawl: ' . Director::protocolAndHost());
 
-        if ($result) {
+        if (in_array($result, ['OK', 'Created'])) {
             $this->addMessage('Successful');
         } else {
-            $this->addMessage('Failed');
+            $this->addMessage('Failed: ' . $result);
         }
+
         $this->isComplete = true;
     }
 
