@@ -18,6 +18,7 @@ use GuzzleHttp\Ring\Client\CurlHandler;
 use GuzzleHttp\Stream\Stream;
 use Marcz\Search\Client\DataWriter;
 use Marcz\Search\Client\DataSearcher;
+use Marcz\Swiftype\Model\SwiftypeEngine;
 use Exception;
 use Object;
 use Config;
@@ -78,7 +79,22 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
             $this->engineKey = $indexConfig['engineKey'];
         }
 
-        $this->documentType = (!empty($indexConfig['documentType'])) ? $indexConfig['documentType'] : strtolower($indexName);
+        if (!empty($indexConfig['documentType'])) {
+            $this->documentType = $indexConfig['documentType'];
+        } else {
+            $this->documentType = strtolower($indexName);
+        }
+
+        $engine = SwiftypeEngine::get()->find('IndexName', $indexName);
+        if ($engine) {
+            $this->engineSlug = $engine->EngineSlug;
+            $this->engineKey = $engine->EngineKey;
+            $this->documentType = $engine->DocumentType;
+            $domain = $engine->Domain()->first();
+            if ($domain) {
+                $this->domainId = $domain->DomainId;
+            }
+        }
 
         $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
         $this->rawQuery = [
@@ -216,7 +232,7 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
     public function update($data)
     {
         $indexName = strtolower($this->clientIndexName);
-        $rawQuery = $this->initIndex($this->clientIndexName);
+        $rawQuery = $this->rawQuery;
 
         $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
         $url = sprintf(
@@ -246,7 +262,7 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
     public function bulkUpdate($list)
     {
         $indexName = strtolower($this->clientIndexName);
-        $rawQuery = $this->initIndex($this->clientIndexName);
+        $rawQuery = $this->rawQuery;
 
         $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
         $url = sprintf(
@@ -276,7 +292,7 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
     public function deleteRecord($recordID)
     {
         $indexName = strtolower($this->clientIndexName);
-        $rawQuery = $this->initIndex($this->clientIndexName);
+        $rawQuery = $this->rawQuery;
 
         $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
         $url = sprintf(
@@ -398,7 +414,6 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
         $term = trim($term);
         $indexName = strtolower($this->clientIndexName);
         $documentType = $this->documentType;
-        $this->rawQuery = $this->initIndex($this->clientIndexName);
         $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
         $indexConfig = ArrayList::create(SearchConfig::config()->get('indices'))
             ->find('name', $this->clientIndexName);
@@ -458,7 +473,6 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
     public function crawlURL($url)
     {
         $indexName = strtolower($this->clientIndexName);
-        $this->rawQuery = $this->initIndex($this->clientIndexName);
         $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
 
         $data = [
@@ -488,7 +502,6 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
     public function crawlDomain()
     {
         $indexName = strtolower($this->clientIndexName);
-        $this->rawQuery = $this->initIndex($this->clientIndexName);
 
         $uri = sprintf(
             '%s/engines/%s/domains/%s/recrawl.json?auth_token=%s',

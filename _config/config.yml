@@ -15,3 +15,6 @@ Marcz\Search\Config:
 Marcz\Search\Processor\Exporter:
   extensions:
     - Marcz\Swiftype\Extensions\Exporter
+SiteConfig:
+  extensions:
+    - Marcz\Swiftype\Extensions\SiteConfig
