@@ -10,6 +10,7 @@ use Config as FileConfig;
 use Marcz\Swiftype\Processor\SwiftExporter;
 use Marcz\Swiftype\SwiftypeClient;
 use Exception;
+use Director;
 use Marcz\Search\Config;
 
 class CrawlBulkExport extends AbstractQueuedJob implements QueuedJob
@@ -68,6 +69,17 @@ class CrawlBulkExport extends AbstractQueuedJob implements QueuedJob
         }
 
         $this->addMessage('Todo: Implement bulk crawling feature.');
+
+        $client = $this->createClient();
+        $result = $client->crawlDomain();
+
+        $this->addMessage('Domain to crawl: ' . Director::protocolAndHost());
+
+        if ($result) {
+            $this->addMessage('Successful');
+        } else {
+            $this->addMessage('Failed');
+        }
         $this->isComplete = true;
     }
 
@@ -83,5 +95,16 @@ class CrawlBulkExport extends AbstractQueuedJob implements QueuedJob
         $this->offset    = 0;
         $this->fileId    = 0;
         $this->bulk      = [];
+    }
+
+    public function createClient($client = null)
+    {
+        if (!$client) {
+            $this->client = SwiftypeClient::create();
+        }
+
+        $this->client->initIndex($this->indexName);
+
+        return $this->client;
     }
 }

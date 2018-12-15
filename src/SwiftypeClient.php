@@ -30,6 +30,7 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
     protected $clientIndexName;
     protected $clientIndexClass;
     protected $documentType;
+    protected $domainId;
     protected $engineSlug;
     protected $engineKey;
     protected $clientAPI;
@@ -64,6 +65,10 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
             ->find('name', $indexName);
 
         $this->clientIndexClass = $indexConfig['class'];
+
+        if (!empty($indexConfig['domainId'])) {
+            $this->domainId = $indexConfig['domainId'];
+        }
 
         if (!empty($indexConfig['engineSlug'])) {
             $this->engineSlug = strtolower($indexConfig['engineSlug']);
@@ -448,6 +453,61 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
         );
 
         return new ArrayList($recordData);
+    }
+
+    public function crawlURL($url)
+    {
+        $indexName = strtolower($this->clientIndexName);
+        $this->rawQuery = $this->initIndex($this->clientIndexName);
+        $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
+
+        $data = [
+            'auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
+            'url' => $url,
+        ];
+
+        $uri = sprintf(
+            '%s/engines/%s/domains/%s/crawl_url.json',
+            parse_url($endPoint, PHP_URL_PATH),
+            $this->engineSlug ?: $indexName,
+            $this->domainId
+        );
+
+        $this->rawQuery['http_method'] = 'PUT';
+        $this->rawQuery['uri'] = $uri;
+        $this->rawQuery['body'] = json_encode($data, JSON_PRESERVE_ZERO_FRACTION);
+
+        $handler = $this->clientAPI;
+        $response = $handler($this->rawQuery);
+        $stream = Stream::factory($response['body']);
+        $response['body'] = $stream->getContents();
+
+        return in_array($response->wait()['reason'], ['OK', 'Created']);
+    }
+
+    public function crawlDomain()
+    {
+        $indexName = strtolower($this->clientIndexName);
+        $this->rawQuery = $this->initIndex($this->clientIndexName);
+
+        $uri = sprintf(
+            '%s/engines/%s/domains/%s/recrawl.json?auth_token=%s',
+            parse_url($this->getEnv('SS_SWIFTYPE_END_POINT'), PHP_URL_PATH),
+            $this->engineSlug ?: $indexName,
+            $this->domainId,
+            $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN')
+        );
+
+        $this->rawQuery['http_method'] = 'PUT';
+        $this->rawQuery['uri'] = $uri;
+        $this->rawQuery['headers']['Content-Length'] = [0];
+
+        $handler = $this->clientAPI;
+        $response = $handler($this->rawQuery);
+        $stream = Stream::factory($response['body']);
+        $response['body'] = $stream->getContents();
+
+        return in_array($response->wait()['reason'], ['OK', 'Created']);
     }
 
     public function mapToDataObject($record)

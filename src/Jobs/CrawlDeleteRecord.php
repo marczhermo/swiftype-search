@@ -54,7 +54,21 @@ class CrawlDeleteRecord extends AbstractQueuedJob implements QueuedJob
             throw new Exception('Missing recordID defined on the constructor');
         }
 
-        $this->addMessage('Todo: Implement crawling feature.');
+        $list   = new DataList($this->className);
+        $record = $list->byID($this->recordID);
+
+        $client = $this->createClient();
+        $link = $record->AbsoluteLink();
+        $result = $client->crawlURL($link);
+
+        $this->addMessage('URL to crawl: ' . $link);
+
+        if ($result) {
+            $this->addMessage('Successful');
+        } else {
+            $this->addMessage('Failed');
+        }
+
         $this->isComplete = true;
     }
 

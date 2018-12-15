@@ -4,7 +4,6 @@ namespace Marcz\Swiftype\Jobs;
 
 use AbstractQueuedJob;
 use QueuedJob;
-use Marcz\Swiftype\Processor\SwiftExporter;
 use Marcz\Swiftype\SwiftypeClient;
 use Exception;
 use DataList;
@@ -37,7 +36,7 @@ class CrawlExport extends AbstractQueuedJob implements QueuedJob
      */
     public function getJobType()
     {
-        return QueuedJob::QUEUED;
+        return QueuedJob::IMMEDIATE;
     }
 
     public function process()
@@ -50,7 +49,25 @@ class CrawlExport extends AbstractQueuedJob implements QueuedJob
             throw new Exception('Missing className defined on the constructor');
         }
 
-        $this->addMessage('Todo: Implement crawling feature.');
+        $list   = new DataList($this->className);
+        $record = $list->byID($this->recordID);
+
+        if (!$record) {
+            throw new Exception('Record not found.');
+        }
+
+        $client = $this->createClient();
+        $link = $record->getAbsoluteLiveLink(false);
+        $result = $client->crawlURL($link);
+
+        $this->addMessage('URL to crawl: ' . $link);
+
+        if ($result) {
+            $this->addMessage('Successful');
+        } else {
+            $this->addMessage('Failed');
+        }
+
         $this->isComplete = true;
     }
 
