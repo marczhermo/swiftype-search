@@ -47,12 +47,14 @@ class SwiftypeClientTest extends SapphireTest
         $rawQuery = $client->initIndex('index_name');
         $expected = [
             'http_method'   => 'GET',
+            'scheme'        => 'https',
             'uri'           => '/api/v1/',
             'headers'       => [
                 'host'  => ['api.swiftype.com'],
                 'Content-Type' => ['application/json'],
             ],
             'client'      => [
+                'timeout' => 60.0,
                 'curl' => [
                     CURLOPT_SSL_VERIFYHOST => 0,
                     CURLOPT_SSL_VERIFYPEER => false
@@ -78,12 +80,14 @@ class SwiftypeClientTest extends SapphireTest
         $data = ['auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
         $expected = [
             'http_method' => 'GET',
+            'scheme'      => 'https',
             'uri' => '/api/v1/engines.json',
             'headers' => [
                 'host' => ['api.swiftype.com'],
                 'Content-Type' => ['application/json'],
             ],
             'client' => [
+                'timeout' => 60.0,
                 'curl' => [
                     CURLOPT_SSL_VERIFYHOST => 0,
                     CURLOPT_SSL_VERIFYPEER => false
@@ -104,12 +108,14 @@ class SwiftypeClientTest extends SapphireTest
         $data = ['auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN')];
         $expected = [
             'http_method' => 'GET',
+            'scheme'      => 'https',
             'uri' => '/api/v1/engines/myproducts/document_types.json',
             'headers' => [
                 'host' => ['api.swiftype.com'],
                 'Content-Type' => ['application/json'],
             ],
             'client' => [
+                'timeout' => 60.0,
                 'curl' => [
                     CURLOPT_SSL_VERIFYHOST => 0,
                     CURLOPT_SSL_VERIFYPEER => false
@@ -136,12 +142,14 @@ class SwiftypeClientTest extends SapphireTest
         ];
         $expected = [
             'http_method' => 'POST',
+            'scheme'      => 'https',
             'uri' => '/api/v1/engines.json',
             'headers' => [
                 'host' => ['api.swiftype.com'],
                 'Content-Type' => ['application/json'],
             ],
             'client' => [
+                'timeout' => 60.0,
                 'curl' => [
                     CURLOPT_SSL_VERIFYHOST => 0,
                     CURLOPT_SSL_VERIFYPEER => false
@@ -165,12 +173,14 @@ class SwiftypeClientTest extends SapphireTest
         ];
         $expected = [
             'http_method' => 'POST',
+            'scheme'      => 'https',
             'uri' => '/api/v1/engines/myproducts/document_types.json',
             'headers' => [
                 'host' => ['api.swiftype.com'],
                 'Content-Type' => ['application/json'],
             ],
             'client' => [
+                'timeout' => 60.0,
                 'curl' => [
                     CURLOPT_SSL_VERIFYHOST => 0,
                     CURLOPT_SSL_VERIFYPEER => false

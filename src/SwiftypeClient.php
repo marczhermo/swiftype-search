@@ -28,6 +28,10 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
 {
     protected $authToken;
     protected $clientIndexName;
+    protected $clientIndexClass;
+    protected $documentType;
+    protected $engineSlug;
+    protected $engineKey;
     protected $clientAPI;
     protected $response;
     protected $rawQuery;
@@ -56,23 +60,40 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
 
         $this->clientIndexName = $indexName;
 
+        $indexConfig = ArrayList::create(SearchConfig::config()->get('indices'))
+            ->find('name', $indexName);
+
+        $this->clientIndexClass = $indexConfig['class'];
+
+        if (!empty($indexConfig['engineSlug'])) {
+            $this->engineSlug = strtolower($indexConfig['engineSlug']);
+        }
+
+        if (!empty($indexConfig['engineKey'])) {
+            $this->engineKey = $indexConfig['engineKey'];
+        }
+
+        $this->documentType = (!empty($indexConfig['documentType'])) ? $indexConfig['documentType'] : strtolower($indexName);
+
         $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
         $this->rawQuery = [
             'http_method'   => 'GET',
+            'scheme'        => 'https',
             'uri'           => parse_url($endPoint, PHP_URL_PATH),
-            //'query_string' => ($query) ? $query . '&' . $token : $token,
             'headers'       => [
                 'host'  => [parse_url($endPoint, PHP_URL_HOST)],
                 'Content-Type' => ['application/json'],
             ],
             'client' => [
+                'timeout' => 60.0,
                 'curl' => [
                     CURLOPT_SSL_VERIFYHOST => 0,
                     CURLOPT_SSL_VERIFYPEER => false
                 ]
             ]
-            // 'body' => $data
         ];
+
+        $this->extend('updateInitIndex', $this->rawQuery);
 
         return $this->sql();
     }
@@ -371,32 +392,42 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
     {
         $term = trim($term);
         $indexName = strtolower($this->clientIndexName);
-
+        $documentType = $this->documentType;
         $this->rawQuery = $this->initIndex($this->clientIndexName);
-
         $endPoint = $this->getEnv('SS_SWIFTYPE_END_POINT');
-        $url = sprintf(
-            '%sengines/%s/search.json',
-            parse_url($endPoint, PHP_URL_PATH),
-            $indexName
-        );
+        $indexConfig = ArrayList::create(SearchConfig::config()->get('indices'))
+            ->find('name', $this->clientIndexName);
+
         $data = [
             'auth_token' => $this->getEnv('SS_SWIFTYPE_AUTH_TOKEN'),
             'q' => $term,
-            'document_types' => [$indexName],
+            'document_types' => [$documentType],
             'page' => $pageNumber ?: 1,
             'per_page' => $pageLength,
-            'filters' => [$indexName => $this->translateFilterModifiers($filters)],
-            'facets' => [$indexName => []],
+            'filters' => [$documentType => $this->translateFilterModifiers($filters)],
+            'facets' => [$documentType => []],
         ];
 
-        $indexConfig = ArrayList::create(SearchConfig::config()->get('indices'))
-                        ->find('name', $this->clientIndexName);
+        $url = sprintf(
+            '%s/engines/%s/search.json',
+            parse_url($endPoint, PHP_URL_PATH),
+            $this->engineSlug ?: $indexName
+        );
 
-        if (!empty($indexConfig['attributesForFaceting'])) {
-            $data['facets'] = [$indexName => $indexConfig['attributesForFaceting']];
+        if (!empty($indexConfig['engineKey'])) {
+            $url = sprintf(
+                '%s/public/engines/search.json',
+                parse_url($endPoint, PHP_URL_PATH)
+            );
+            $data['engine_key'] = $indexConfig['engineKey'];
+            unset($data['auth_token']);
         }
 
+        if (!empty($indexConfig['attributesForFaceting'])) {
+            $data['facets'] = [$documentType => array_map('strtolower', $indexConfig['attributesForFaceting'])];
+        }
+
+        $this->extend('updateQueryData', $data);
         $this->rawQuery['uri'] = $url;
         $this->rawQuery['body'] = json_encode($data, JSON_PRESERVE_ZERO_FRACTION);
 
@@ -405,12 +436,15 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
         $stream = Stream::factory($response['body']);
         $response['body'] = $stream->getContents();
 
-        $this->response = json_decode($response['body'], true);
-        $this->response['_total'] = $this->response['info'][$indexName]['total_result_count'];
+        if ($response->wait()['reason'] !== 'OK') {
+            return new ArrayList([['Content' => $response->wait()['reason']]]);
+        }
 
+        $this->response = json_decode($response['body'], true);
+        $this->response['_total'] = $this->response['info'][$documentType]['total_result_count'];
         $recordData = array_map(
             [$this, 'mapToDataObject'],
-            $this->response['records'][$indexName]
+            $this->response['records'][$documentType]
         );
 
         return new ArrayList($recordData);
@@ -418,7 +452,19 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
 
     public function mapToDataObject($record)
     {
-        return Injector::inst()->createWithArgs($record['ClassName'], [$record]);
+        $className = empty($record['ClassName']) ? $this->clientIndexClass : $record['ClassName'];
+
+        if (isset($record['title'])) {
+            $record['Title'] = $record['title'];
+            unset($record['title']);
+        }
+
+        if (isset($record['body'])) {
+            $record['Content'] = $record['body'];
+            unset($record['body']);
+        }
+
+        return Injector::inst()->createWithArgs($className, [$record]);
     }
 
     public function getResponse()
