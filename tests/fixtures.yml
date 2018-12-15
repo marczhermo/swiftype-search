@@ -1,0 +1,11 @@
+Marcz\Swiftype\Model\SwiftypeEngine:
+  myengine:
+    IndexName: 'Page'
+    EngineSlug: 'examplesearch'
+    EngineKey: '8BEb6fC9rAyrds51Su_Z'
+    DocumentType: 'page'
+Marcz\Swiftype\Model\SwiftypeDomain:
+  mydomain:
+    Domain: 'example.com'
+    DomainId: '5c0fb46fb5b9e1633f9c20e4'
+    Engine: =>Marcz\Swiftype\Model\SwiftypeEngine.myengine
