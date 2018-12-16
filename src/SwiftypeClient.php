@@ -434,12 +434,12 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
             $this->engineSlug ?: $indexName
         );
 
-        if (!empty($indexConfig['engineKey'])) {
+        if ($this->engineKey) {
             $url = sprintf(
                 '%s/public/engines/search.json',
                 parse_url($endPoint, PHP_URL_PATH)
             );
-            $data['engine_key'] = $indexConfig['engineKey'];
+            $data['engine_key'] = $this->engineKey;
             unset($data['auth_token']);
         }
 
