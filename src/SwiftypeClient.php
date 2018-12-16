@@ -543,6 +543,8 @@ class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, 
             unset($record['body']);
         }
 
+        $this->extend('normaliseRecord', $record);
+
         return Injector::inst()->createWithArgs($className, [$record]);
     }
 
