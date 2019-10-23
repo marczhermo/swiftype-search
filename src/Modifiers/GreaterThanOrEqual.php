@@ -2,10 +2,9 @@
 
 namespace Marcz\Swiftype\Modifiers;
 
-use Object;
 use Marcz\Search\Client\ModifyFilterable;
 
-class GreaterThanOrEqual extends Object implements ModifyFilterable
+class GreaterThanOrEqual extends SS_Object implements ModifyFilterable
 {
     public function apply($key, $value)
     {

@@ -20,12 +20,11 @@ use Marcz\Search\Client\DataWriter;
 use Marcz\Search\Client\DataSearcher;
 use Marcz\Swiftype\Model\SwiftypeEngine;
 use Exception;
-use Object;
 use Config;
 use Director;
 use Versioned;
 
-class SwiftypeClient extends Object implements SearchClientAdaptor, DataWriter, DataSearcher
+class SwiftypeClient extends SS_Object implements SearchClientAdaptor, DataWriter, DataSearcher
 {
     protected $authToken;
     protected $clientIndexName;

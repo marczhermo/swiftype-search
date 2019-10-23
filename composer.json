@@ -10,7 +10,7 @@
         "admin"
     ],
     "require": {
-        "marczhermo/search-list": "^0.1",
+        "marczhermo/search-list": "dev-upgrade",
         "guzzlehttp/ringphp": "^1.1",
         "silverstripe/queuedjobs": "^3"
     },
@@ -33,5 +33,11 @@
         "lint": "php phpcs.phar src/ tests/php/"
     },
     "minimum-stability": "dev",
+    "repositories": [
+		{
+			"type": "vcs",
+			"url": "git@github.com:amolswnz/search-list.git"
+        }
+    ],
     "prefer-stable": true
 }
