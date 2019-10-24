@@ -2,10 +2,10 @@
 
 namespace Marcz\Swiftype\Modifiers;
 
-use Object;
+use SS_Object;
 use Marcz\Search\Client\ModifyFilterable;
 
-class LessThanOrEqual extends Object implements ModifyFilterable
+class LessThanOrEqual extends SS_Object implements ModifyFilterable
 {
     public function apply($key, $value)
     {
