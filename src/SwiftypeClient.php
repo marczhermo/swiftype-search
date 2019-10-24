@@ -20,6 +20,7 @@ use Marcz\Search\Client\DataWriter;
 use Marcz\Search\Client\DataSearcher;
 use Marcz\Swiftype\Model\SwiftypeEngine;
 use Exception;
+use SS_Object;
 use Config;
 use Director;
 use Versioned;
