@@ -1,15 +1,10 @@
 ---
-Name: swiftypesearch
+Name: swiftype-search-list
 ---
-SilverStripe\Admin\LeftAndMain:
-  extensions:
-    - Marcz\Swiftype\SwiftypeAdminExtension
-
 Marcz\Search\Config:
   clients:
     - name: 'Swiftype'
       write: true
-      delete: true
       export: 'json'
       class: 'Marcz\Swiftype\SwiftypeClient'
 Marcz\Search\Processor\Exporter:
