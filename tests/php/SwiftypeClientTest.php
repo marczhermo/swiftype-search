@@ -11,7 +11,7 @@ use GuzzleHttp\Stream\Stream;
 
 class SwiftypeClientTest extends SapphireTest
 {
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
         Environment::setEnv('SS_SWIFTYPE_END_POINT', 'http://api.swiftype.com/api/v1/');
